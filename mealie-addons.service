@@ -1,0 +1,51 @@
+[Service]
+# Fill in everything that has a value of <TODO> with your config.
+
+# The same value as the "BASE_URL" in your mealie config followed by "/g/" and
+# by the name of the group whose data you wish to export. The first part is the
+# URL that you can reach mealie from externally.
+Environment=MEALIE_BASE_URL=<TODO>/g/<TODO>
+# The URL that mealie-addons shall use to retrieve data from mealie. This shall
+# be identical to the MEALIE_BASE_URL if both services are not running on the
+# same system.
+Environment=MEALIE_RETRIEVAL_URL=http://localhost:8013
+# A token that can be used to access mealie. Access to recipes will be
+# restricted to whatever this token gives access to.
+Environment=MEALIE_TOKEN=<TODO>
+# The network interface where mealie-addons shall be reachable in the format
+# "interface":"port". Leave the interface part empty if you wish to listen on
+# all interfaces.
+Environment=MA_LISTEN_INTERFACE=<TODO>:<TODO>
+# The number of concurrent connections mealie-addons shall use to mealie when
+# retrieving recipe details. Do not make this a lot larger than 5. Depending on
+# the performance of the server hosting mealie, this might have to be 2 or even
+# 1 in order not to overburden the server with requests.
+Environment=MA_RETRIEVAL_LIMIT=5
+# The number of seconds that mealie-addons will attempt to connect to mealie at
+# startup. This should be as short as possible but long enough for the mealie
+# server to start up fully and accept connections. This configuration is
+# important mostly if both services run on the same machine.
+Environment=MA_STARTUP_GRACE_SECS=30
+# The number of seconds that mealie-addons may take at most to generate a file
+# for download. This value helps prevent resource starvation on the server side
+# due to very large numbers of recipes being retrieved. It also helps prevent
+# running into HTTP timeouts. This value must be large enough for the file to be
+# successfully generated. It is recommended not to exceed a value of 60, though.
+Environment=MA_TIMEOUT_SECS=60
+# A local user account that this service shall run as. Do not use root.
+User=<TODO>
+# The directory where mealie-addons is located.
+WorkingDirectory=<TODO>
+# Replace <TODO> by the directory where mealie-addons is located.
+ExecStart=<TODO>/mealie-addons
+
+# The rest should stay as is.
+Environment=GIN_MODE=release
+Restart=on-failure
+Type=simple
+
+[Unit]
+Description=Mealie Addons
+
+[Install]
+WantedBy=multi-user.target
