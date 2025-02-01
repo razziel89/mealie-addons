@@ -1,4 +1,4 @@
-## Export recipes from mealie to various formats and more
+## Export Recipes From Mealie To Various Formats And More
 
 <!-- vim-markdown-toc GFM -->
 
@@ -21,6 +21,8 @@
 
 This is `mealie-addons`, a stand-alone server that provides additional
 functionality for the amazing [mealie] by using its REST API.
+The main feature of `mealie-addons` is bulk export of recipies to various
+formats such as PDF or EPUB.
 The `mealie-addons` project is not affiliated with the [mealie] project.
 
 # Motivation
@@ -46,6 +48,26 @@ Then, all recipes will be aggregated into a single markdown document along with
 a recipe index, a tag index, and a category index.
 That document will then be converted to the user's chosen format using the
 amazing [pandoc].
+
+## Filtering And Examples
+
+Often, it is desirable to retrieve only a subset of all recipies stored in a
+[mealie] instance.
+To support this, `mealie-addons` will forward all query parameters to [mealie]'s
+`/get/recipes` endpoint as is.
+Hence, `mealie-export` supports all of [mealie]'s [filtering] features.
+Note that all query values have to use their [URL encoding].
+
+For the following examples, it is assumed that your `mealie-addons` server can
+be reached via `http://mealie-addons`:
+
+- Order all recipes by name in ascending order and export to EPUB:
+  `http://mealie-addons/book/epub?orderBy=name&orderDirection=asc`
+- Get all recipes created after a certain date, in this example 2023-02-25, and
+  export to PDF:
+  `http://mealie-addons/book/pdf?queryFilter=recipe.createdAt%20%3E%3D%20%222023-02-25%22`
+  Note that the value following the `queryFilter` query parameter is the
+  [URL encoding] of the string `recipe.createdAt >= "2023-02-25"`.
 
 # Supported Features
 
@@ -112,9 +134,11 @@ If you want to use this piece of software under a different, more permissive
 open-source licence, please contact me.
 I am very open to discussing this point.
 
+[filtering]: https://docs.mealie.io/documentation/getting-started/api-usage/#filtering
 [GPLv3]: ./LICENCE
 [latest release]: https://github.com/razziel89/mdslw/releases/latest
 [long standing issue]: https://github.com/mealie-recipes/mealie/issues/1306
 [mealie's REST API]: https://docs.mealie.io/documentation/getting-started/api-usage/
 [mealie]: https://mealie.io/
 [pandoc]: https://pandoc.org/
+[URL encoding]: https://en.wikipedia.org/wiki/Percent-encoding
