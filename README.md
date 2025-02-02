@@ -162,6 +162,91 @@ instance.
 ## Docker-Compose
 
 This is the preferred way to deploy `mealie-addons`.
+The following is a docker-compose file based on the [SQLite example] from the
+official [mealie] documentation.
+Simply add `mealie-addons` as a separate service as shown below.
+In this example, `mealie-addons` will be accessible under the same URL as
+[mealie] but on port 9926 as compared to [mealie]'s port 9925.
+In this example, the provided [API token] provides access to the recipes of a
+group called `home`.
+
+```yaml
+---
+services:
+    mealie:
+        image: ghcr.io/mealie-recipes/mealie:v2.4.2
+        container_name: mealie
+        restart: always
+        ports:
+            - "9925:9000"
+        deploy:
+            resources:
+                limits:
+                    memory: 1000M
+        volumes:
+            - mealie-data:/app/data/
+        environment:
+            ALLOW_SIGNUP: "false"
+            PUID: 1000
+            PGID: 1000
+            TZ: America/Anchorage
+            BASE_URL: https://mealie.yourdomain.com
+
+    mealie-addons:
+        image: mealie-addons:local
+        container_name: mealie-addons
+        restart: always
+        ports:
+            - "9926:9000"
+        build:
+            context: .
+            dockerfile_inline: |
+                FROM golang:1.23-bookworm AS builder
+                RUN \
+                  apt-get update && \
+                  DEBIAN_FRONTEND=noninteractive apt-get install -y make git
+                WORKDIR /app
+                RUN \
+                  git clone https://github.com/razziel89/mealie-addons . && \
+                  make build
+
+                FROM ubuntu:latest
+                RUN \
+                  apt-get update && \
+                  DEBIAN_FRONTEND=noninteractive apt-get install -y \
+                    pandoc texlive-latex-base texlive-latex-extra texlive-xetex && \
+                  rm -rf /var/lib/apt/lists/*
+                WORKDIR /app
+                COPY --from=builder /app/mealie-addons .
+                ENTRYPOINT ["/app/mealie-addons"]
+        environment:
+            MA_LISTEN_INTERFACE: ":9000"
+            MA_RETRIEVAL_LIMIT: "5"
+            MA_TIMEOUT_SECS: "60"
+            MA_STARTUP_GRACE_SECS: "30"
+            MEALIE_BASE_URL: "https://mealie.yourdomain.com/g/home"
+            MEALIE_RETRIEVAL_URL: "http://mealie:9000"
+            MEALIE_TOKEN: "/run/secrets/MEALIE_TOKEN"
+        secrets:
+            - MEALIE_TOKEN
+
+volumes:
+    mealie-data:
+
+secrets:
+    MEALIE_TOKEN:
+        # This is the file containing the token used to access mealie. The path
+        # is relative to the location of this file.
+        file: mealie_token.txt
+```
+
+You can then start `mealie-addons` like this by first building the required
+docker image locally and then starting everything up:
+
+```bash
+docker compose build
+docker compose up
+```
 
 ## Systemd
 
@@ -310,5 +395,6 @@ I am very open to discussing this point.
 [nginx]: https://nginx.org/en/
 [oauth2-proxy]: https://github.com/oauth2-proxy/oauth2-proxy
 [pandoc]: https://pandoc.org/
+[SQLite example]: https://docs.mealie.io/documentation/getting-started/installation/sqlite/
 [URL encoding]: https://en.wikipedia.org/wiki/Percent-encoding
 [VPN]: https://en.wikipedia.org/wiki/Virtual_private_network

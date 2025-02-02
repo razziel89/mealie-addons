@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 )
 
 type config struct {
@@ -45,10 +46,23 @@ func initConfig() (cfg config, err error) {
 		return
 	}
 
+	// Try to interpret the token as pointing to a file that exists. If so, we read the value from
+	// the file. If not, we use the value from the environment directly. This enables the use of
+	// docker-compose secrets.
+	var token string
+	tokenInput := os.Getenv("MEALIE_TOKEN")
+	maybeToken, readErr := os.ReadFile(tokenInput)
+	if readErr == nil {
+		// It does point to a file.
+		token = strings.TrimSpace(string(maybeToken))
+	} else {
+		token = strings.TrimSpace(tokenInput)
+	}
+
 	cfg = config{
 		mealieRetrievalURL: os.Getenv("MEALIE_RETRIEVAL_URL"),
 		mealieBaseURL:      os.Getenv("MEALIE_BASE_URL"),
-		mealieToken:        os.Getenv("MEALIE_TOKEN"),
+		mealieToken:        token,
 		listenInterface:    os.Getenv("MA_LISTEN_INTERFACE"),
 		retrievalLimit:     retrievalLimit,
 		timeoutSecs:        timeoutSecs,
