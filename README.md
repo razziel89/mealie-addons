@@ -227,6 +227,7 @@ services:
             MEALIE_BASE_URL: "https://mealie.yourdomain.com/g/home"
             MEALIE_RETRIEVAL_URL: "http://mealie:9000"
             MEALIE_TOKEN: "/run/secrets/MEALIE_TOKEN"
+            GIN_MODE: release
         secrets:
             - MEALIE_TOKEN
 
