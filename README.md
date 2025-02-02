@@ -165,6 +165,52 @@ This is the preferred way to deploy `mealie-addons`.
 
 ## Systemd
 
+Go to the project's release page to download the [latest release], select the
+correct distribution for your system, and download it.
+Then, add a file `/etc/systemd/system/mealie-addons.service` with the following
+content.
+The meaning of each of the the [environment variables] is explained
+[below](#environment-variables).
+
+```
+[Service]
+# Environment variables used to configure mealie-addons.
+# Replace each <TODO> by an appropriate value.
+Environment=MEALIE_BASE_URL=<TODO>/g/<TODO>
+Environment=MEALIE_RETRIEVAL_URL=<TODO>
+Environment=MEALIE_TOKEN=<TODO>
+Environment=MA_LISTEN_INTERFACE=<TODO>:<TODO>
+Environment=MA_RETRIEVAL_LIMIT=<TODO>
+Environment=MA_STARTUP_GRACE_SECS=<TODO>
+Environment=MA_TIMEOUT_SECS=<TODO>
+
+# A local user account that this service shall run as. Do not use root.
+User=<TODO>
+# The directory where mealie-addons is located.
+WorkingDirectory=<TODO>
+# Replace <TODO> by the directory where mealie-addons is located.
+ExecStart=<TODO>/mealie-addons
+
+Environment=GIN_MODE=release
+Restart=on-failure
+Type=simple
+
+[Unit]
+Description=Mealie Addons
+
+[Install]
+WantedBy=multi-user.target
+```
+
+To launch the new service and make sure it is launched at system startup,
+execute the following commands:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable mealie-addons
+sudo systemctl start mealie-addons
+```
+
 ## Manual
 
 Go to the project's release page to download the [latest release], select the
