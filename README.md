@@ -167,8 +167,10 @@ official [mealie] documentation.
 Simply add `mealie-addons` as a separate service as shown below.
 In this example, `mealie-addons` will be accessible under the same URL as
 [mealie] but on port 9926 as compared to [mealie]'s port 9925.
-In this example, the provided [API token] provides access to the recipes of a
-group called `home`.
+In this example, the given [API token] provides access to the recipes of a group
+called `home`.
+The meaning of each of the the [environment variables] is explained
+[below](#environment-variables).
 
 ```yaml
 ---
@@ -332,6 +334,7 @@ The following explains all [environment variables] understood by
 - `MEALIE_TOKEN`:
   An [API token] that can be used to access [mealie].
   Access to recipes will be restricted to whatever this token gives access to.
+  This can also be a path to a file that contains the token.
 
 - `MA_LISTEN_INTERFACE`:
   The network interface where `mealie-addons` shall be reachable in the format
