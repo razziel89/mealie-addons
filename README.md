@@ -412,7 +412,7 @@ I am very open to discussing this point.
 [environment variables]: https://en.wikipedia.org/wiki/Environment_variable
 [filtering]: https://docs.mealie.io/documentation/getting-started/api-usage/#filtering
 [GPLv3]: ./LICENCE
-[latest release]: https://github.com/razziel89/mdslw/releases/latest
+[latest release]: https://github.com/razziel89/mealie-addons/releases/latest
 [long standing issue]: https://github.com/mealie-recipes/mealie/issues/1306
 [mealie's REST API]: https://docs.mealie.io/documentation/getting-started/api-usage/
 [mealie]: https://mealie.io/
