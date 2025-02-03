@@ -177,11 +177,15 @@ instance.
 This is the preferred way to deploy `mealie-addons`.
 The following is a docker-compose file based on the [SQLite example] from the
 official [mealie] documentation.
-Simply add `mealie-addons` as a separate service as shown below.
-In this example, `mealie-addons` will be accessible under the same URL as
+Simply add `mealie-addons` as a separate service as shown below, making sure to
+select the version you want to deploy as the build arg `MA_VERSION`.
+You can find the [latest release] on the project's release page.
+
+In the below example, `mealie-addons` will be accessible under the same URL as
 [mealie] but on port 9926 as compared to [mealie]'s port 9925.
 In this example, the given [API token] provides access to the recipes of a group
 called `home`.
+In this example, the deployed version of `mealie-addons` will be `0.1.0`.
 The meaning of each of the the [environment variables] is explained
 [below](#environment-variables).
 
@@ -214,6 +218,8 @@ services:
         ports:
             - "9926:9000"
         build:
+            args:
+               MA_VERSION: "0.1.0"
             context: .
             dockerfile_inline: |
                 FROM golang:1.23-bookworm AS builder
@@ -223,6 +229,7 @@ services:
                 WORKDIR /app
                 RUN \
                   git clone https://github.com/razziel89/mealie-addons . && \
+                  git checkout "$${MA_VERSION}" && \
                   make build
 
                 FROM ubuntu:latest
