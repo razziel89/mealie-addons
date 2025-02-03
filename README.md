@@ -6,9 +6,9 @@
 * [Motivation](#motivation)
 * [Supported Features](#supported-features)
 * [Non-Features](#non-features)
-* [Caveats](#caveats)
 * [Working Principle](#working-principle)
-* [How To Use](#how-to-use)
+    * [Caveats](#caveats)
+    * [How To Use](#how-to-use)
     * [Filtering And Examples](#filtering-and-examples)
 * [How To Deploy](#how-to-deploy)
     * [Docker-Compose](#docker-compose)
@@ -58,13 +58,15 @@ The following features are out of scope for `mealie-addons`:
 - Encrypted connections:
   All connections to `mealie-addons` use unencrypted HTTP.
   An additional [nginx] deployment can provide an upgrade to encrypted HTTPS.
-  In general, it is recommended to deploy `mealie-addons` behind a [VPN].
+  In general, it is recommended to deploy `mealie-addons` behind a [VPN] or in a
+  trusted (home) network.
 - Authentication:
   Anyone with network access to `mealie-addons` can retrieve the recipes
   accessible to it.
   An additional [oauth2-proxy] deployment can be used to limit access to a
   `mealie-addons` instance.
-  In general, it is recommended to deploy `mealie-addons` behind a [VPN].
+  In general, it is recommended to deploy `mealie-addons` behind a [VPN] or in a
+  trusted (home) network.
 
 The following features are not implemented at the moment but can be considered
 in scope for `mealie-addons`:
@@ -80,8 +82,26 @@ in scope for `mealie-addons`:
   links for ease of use, and be usable on memory-constrained devices.
   Nevertheless, improvements to the formatting of the generated documents, in
   particular PDFs, would be beneficial.
+- Cookbook export:
+  There is no simple way to export all recipes belonging to a cookbook.
+  Instead, one has to construct a query that reproduces the recipes belonging to
+  a cookbook.
+  A simple way to select all recipes belonging to a cookbook would be
+  beneficial.
 
-# Caveats
+# Working Principle
+
+To integrate easily with any [mealie] instance, `mealie-exports` uses
+[mealie's REST API] to retrieve data.
+Based on a user's query, `mealie-exports` will retrieve all matching recipes
+from the configured [mealie] instance.
+Once retrieved, each recipe will be converted to markdown in memory.
+Then, all recipes will be aggregated into a single markdown document in memory
+along with a recipe index, a tag index, and a category index.
+That document will then be converted to the user's chosen format using the
+amazing [pandoc] and served as a file download.
+
+## Caveats
 
 - Due to the way the markdown document is constructed, line breaks are not
   preserved in descriptions, steps, or ingredients.
@@ -98,19 +118,7 @@ in scope for `mealie-addons`:
 - Since `mealie-addons` uses [mealie]'s REST API, it can only ever export data
   associated with a single group per instance.
 
-# Working Principle
-
-To integrate easily with any [mealie] instance, `mealie-exports` uses
-[mealie's REST API] to retrieve data.
-Based on a user's query, `mealie-exports` will retrieve all matching recipes
-from the configured [mealie] instance.
-Once retrieved, each recipe will be converted to markdown in memory.
-Then, all recipes will be aggregated into a single markdown document in memory
-along with a recipe index, a tag index, and a category index.
-That document will then be converted to the user's chosen format using the
-amazing [pandoc] and served as a file download.
-
-# How To Use
+## How To Use
 
 The following examples assume an instance of `mealie-addons` accessible at
 `http://mealie-addons`.
@@ -144,6 +152,8 @@ Note that all query values have to use their [URL encoding].
 
 For the following examples, it is assumed that your `mealie-addons` server can
 be reached via `http://mealie-addons`.
+A document download using a filter can be triggered by accssing an endpoint
+containing appropriate query parameters with a browser.
 Replace that URL with your own.
 
 - Order recipes by name in ascending order and export to EPUB:
@@ -153,6 +163,9 @@ Replace that URL with your own.
   `http://mealie-addons/book/pdf?queryFilter=recipe.createdAt%20%3E%3D%20%222023-02-25%22`
   Note that the value following the `queryFilter` query parameter is the
   [URL encoding] of the string `recipe.createdAt >= "2023-02-25"`.
+- Retrieve all recipes belonging to a category as identified by its UUID:
+  `http://mealie-addons/book/markdown?categories=c5636905-f49a-4c79-8971-b6e22cefbe9c`
+
 
 # How To Deploy
 
