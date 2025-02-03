@@ -100,10 +100,6 @@ func setUpAPI(
 				}
 			}
 
-			if timedOut(ctx, c, "after sending the file") {
-				return
-			}
-
 			if err == nil {
 				msg := fmt.Sprintf("%s endpoint accessed successfully", generator.mimeType())
 				log.Println(msg)
