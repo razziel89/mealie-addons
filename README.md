@@ -91,10 +91,10 @@ in scope for `mealie-addons`:
 
 # Working Principle
 
-To integrate easily with any [mealie] instance, `mealie-exports` uses
+To integrate easily with any [mealie] instance, `mealie-addons` uses
 [mealie's REST API] to retrieve data.
-Based on a user's query, `mealie-exports` will retrieve all matching recipes
-from the configured [mealie] instance.
+Based on a user's query, `mealie-addons` will retrieve all matching recipes from
+the configured [mealie] instance.
 Once retrieved, each recipe will be converted to markdown in memory.
 Then, all recipes will be aggregated into a single markdown document in memory
 along with a recipe index, a tag index, and a category index.
@@ -146,7 +146,7 @@ Often, it is desirable to retrieve only a subset of all recipies stored in a
 [mealie] instance.
 To support this, `mealie-addons` will forward all query parameters to [mealie]'s
 `/get/recipes` endpoint as is.
-Hence, `mealie-export` supports all of [mealie]'s comprehensive [filtering]
+Hence, `mealie-addons` supports all of [mealie]'s comprehensive [filtering]
 features but not more.
 Note that all query values have to use their [URL encoding].
 
