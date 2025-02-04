@@ -67,6 +67,11 @@ The following features are out of scope for `mealie-addons`:
   `mealie-addons` instance.
   In general, it is recommended to deploy `mealie-addons` behind a [VPN] or in a
   trusted (home) network.
+- Templating:
+  Templating engines can cause hard-to-debug problems.
+  Furthermore, one has to use a separate mini-language to construct such
+  templates.
+  For tose reaons, the document built by `mealie-addons` is not customisable.
 
 The following features are not implemented at the moment but can be considered
 in scope for `mealie-addons`:
@@ -152,9 +157,9 @@ Note that all query values have to use their [URL encoding].
 
 For the following examples, it is assumed that your `mealie-addons` server can
 be reached via `http://mealie-addons`.
+Replace that URL with your own.
 A document download using a filter can be triggered by accssing an endpoint
 containing appropriate query parameters with a browser.
-Replace that URL with your own.
 
 - Order recipes by name in ascending order and export to EPUB:
   `http://mealie-addons/book/epub?orderBy=name&orderDirection=asc`
@@ -212,7 +217,6 @@ services:
             BASE_URL: https://mealie.yourdomain.com
 
     mealie-addons:
-        image: mealie-addons:local
         container_name: mealie-addons
         restart: always
         ports:
@@ -263,11 +267,10 @@ secrets:
         file: mealie_token.txt
 ```
 
-You can then start `mealie-addons` like this by first building the required
-docker image locally and then starting everything up:
+You can then start `mealie-addons` like this, which will first build the
+required docker image locally and then start everything up:
 
 ```bash
-docker compose build
 docker compose up
 ```
 
