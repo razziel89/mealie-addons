@@ -12,6 +12,7 @@ concurrency:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
+  IMAGE_TAG: latest
 
 jobs:
   ci:
@@ -95,11 +96,8 @@ jobs:
           REF: ${{ github.ref }}
         run: |
           if [[ ${REF} == "refs/tags/"* ]]; then
-            tag=$(git describe --exact-match --tags)
-            echo "DOCKER_TAGS=${IMAGE_NAME}:latest,${IMAGE_NAME}:${tag}"
             echo "DOCKER_DO_PUSH=true"
           else
-            echo "DOCKER_TAGS=${IMAGE_NAME}:main"
             echo "DOCKER_DO_PUSH=false"
           fi >> $GITHUB_ENV
 
@@ -119,7 +117,7 @@ jobs:
         with:
           context: .
           push: ${{ env.DOCKER_DO_PUSH }}
-          tags: ${{ env.DOCKER_TAGS }}
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
           labels: ${{ steps.extract-metadata.outputs.labels }}
 
       - name: Generate artifact attestation
