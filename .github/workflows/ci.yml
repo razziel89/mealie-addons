@@ -95,7 +95,8 @@ jobs:
           REF: ${{ github.ref }}
         run: |
           if [[ ${REF} == "refs/tags/"* ]]; then
-            echo "DOCKER_TAGS=latest,$(git describe --exact-match --tags)"
+            tag=$(git describe --exact-match --tags)
+            echo "DOCKER_TAGS=latest,${tag}"
             echo "DOCKER_DO_PUSH=true"
           else
             echo "DOCKER_TAGS=main"
@@ -122,6 +123,7 @@ jobs:
           labels: ${{ steps.extract-metadata.outputs.labels }}
 
       - name: Generate artifact attestation
+        if: ${{ env.DOCKER_DO_PUSH == 'true' }}
         uses: actions/attest-build-provenance@v2
         with:
           subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}

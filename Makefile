@@ -18,6 +18,10 @@ update-deps:
 .PHONY: build
 build: mealie-addons
 
+.PHONY: build-docker
+build-docker:
+	DOCKER_BUILDKIT=1 docker build .
+
 .PHONY: build-cross-platform
 build-cross-platform:
 	CLIVERSION=local goreleaser build --clean --snapshot
