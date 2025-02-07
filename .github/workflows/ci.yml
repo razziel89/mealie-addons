@@ -96,10 +96,10 @@ jobs:
         run: |
           if [[ ${REF} == "refs/tags/"* ]]; then
             tag=$(git describe --exact-match --tags)
-            echo "DOCKER_TAGS=latest,${tag}"
+            echo "DOCKER_TAGS=${IMAGE_NAME}:latest,${IMAGE_NAME}:${tag}"
             echo "DOCKER_DO_PUSH=true"
           else
-            echo "DOCKER_TAGS=main"
+            echo "DOCKER_TAGS=${IMAGE_NAME}:main"
             echo "DOCKER_DO_PUSH=false"
           fi >> $GITHUB_ENV
 
