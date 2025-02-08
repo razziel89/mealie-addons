@@ -12,6 +12,8 @@
     * [Filtering And Examples](#filtering-and-examples)
 * [How To Deploy](#how-to-deploy)
     * [Docker-Compose](#docker-compose)
+        * [Both Together](#both-together)
+        * [Stand-Alone](#stand-alone)
     * [Systemd](#systemd)
     * [Manual](#manual)
 * [Environment Variables](#environment-variables)
@@ -180,17 +182,22 @@ instance.
 ## Docker-Compose
 
 This is the preferred way to deploy `mealie-addons`.
+You can either deploy `mealie-addons` together with a [mealie] instance via the
+same docker-compose file or you can deploy `mealie-addons` stand-alone.
+Both setups use the pre-built docker image available here:
+
+```
+ghcr.io/razziel89/mealie-addons:latest
+```
+
+### Both Together
+
 The following is a docker-compose file based on the [SQLite example] from the
 official [mealie] documentation.
-Simply add `mealie-addons` as a separate service as shown below, making sure to
-select the version you want to deploy as the build arg `MA_VERSION`.
-You can find the [latest release] on the project's release page.
+Simply add `mealie-addons` as a separate service as shown below.
 
 In the below example, `mealie-addons` will be accessible under the same URL as
 [mealie] but on port 9926 as compared to [mealie]'s port 9925.
-In this example, the given [API token] provides access to the recipes of a group
-called `home`.
-In this example, the deployed version of `mealie-addons` will be `0.1.0`.
 The meaning of each of the the [environment variables] is explained
 [below](#environment-variables).
 
@@ -217,34 +224,12 @@ services:
             BASE_URL: https://mealie.yourdomain.com
 
     mealie-addons:
+        image: ghcr.io/razziel89/mealie-addons:latest
         container_name: mealie-addons
+        depends_on: [mealie]
         restart: always
         ports:
             - "9926:9000"
-        build:
-            args:
-               MA_VERSION: "0.1.0"
-            context: .
-            dockerfile_inline: |
-                FROM golang:1.23-bookworm AS builder
-                RUN \
-                  apt-get update && \
-                  DEBIAN_FRONTEND=noninteractive apt-get install -y make git
-                WORKDIR /app
-                RUN \
-                  git clone https://github.com/razziel89/mealie-addons . && \
-                  git checkout "$${MA_VERSION}" && \
-                  make build
-
-                FROM ubuntu:latest
-                RUN \
-                  apt-get update && \
-                  DEBIAN_FRONTEND=noninteractive apt-get install -y \
-                    pandoc texlive-latex-base texlive-latex-extra texlive-xetex && \
-                  rm -rf /var/lib/apt/lists/*
-                WORKDIR /app
-                COPY --from=builder /app/mealie-addons .
-                ENTRYPOINT ["/app/mealie-addons"]
         environment:
             MA_LISTEN_INTERFACE: ":9000"
             MA_RETRIEVAL_LIMIT: "5"
@@ -267,12 +252,50 @@ secrets:
         file: mealie_token.txt
 ```
 
-You can then start `mealie-addons` like this, which will first build the
-required docker image locally and then start everything up:
+You can then start both [mealie] and `mealie-addons` together like this:
 
 ```bash
 docker compose up
 ```
+
+### Stand-Alone
+
+The following is a docker-compose file showing how to deploy `mealie-addons` on
+its own.
+In the below example, `mealie-addons` will be accessible on port 9926.
+In this example, `mealie-addons` will access a [mealie] installation accessible
+at `https://mealie.yourdomain.com`.
+The meaning of each of the the [environment variables] is explained
+[below](#environment-variables).
+
+```yaml
+---
+services:
+    mealie-addons:
+        image: ghcr.io/razziel89/mealie-addons:latest
+        container_name: mealie-addons
+        restart: always
+        ports:
+            - "9926:9000"
+        environment:
+            MA_LISTEN_INTERFACE: ":9000"
+            MA_RETRIEVAL_LIMIT: "5"
+            MA_TIMEOUT_SECS: "60"
+            MA_STARTUP_GRACE_SECS: "30"
+            MEALIE_BASE_URL: "https://mealie.yourdomain.com"
+            MEALIE_RETRIEVAL_URL: "https://mealie.yourdomain.com"
+            MEALIE_TOKEN: "/run/secrets/MEALIE_TOKEN"
+            GIN_MODE: release
+        secrets:
+            - MEALIE_TOKEN
+
+secrets:
+    MEALIE_TOKEN:
+        # This is the file containing the token used to access mealie. The path
+        # is relative to the location of this file.
+        file: mealie_token.txt
+```
+
 
 ## Systemd
 
