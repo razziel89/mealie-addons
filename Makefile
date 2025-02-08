@@ -20,7 +20,7 @@ build: mealie-addons
 
 .PHONY: build-docker
 build-docker:
-	DOCKER_BUILDKIT=1 docker build .
+	DOCKER_BUILDKIT=1 docker build . -t ghcr.io/razziel89/mealie-addons:latest
 
 .PHONY: build-cross-platform
 build-cross-platform:
