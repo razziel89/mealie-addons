@@ -250,7 +250,7 @@ services:
             MA_RETRIEVAL_LIMIT: "5"
             MA_TIMEOUT_SECS: "60"
             MA_STARTUP_GRACE_SECS: "30"
-            MEALIE_BASE_URL: "https://mealie.yourdomain.com/g/home"
+            MEALIE_BASE_URL: "https://mealie.yourdomain.com"
             MEALIE_RETRIEVAL_URL: "http://mealie:9000"
             MEALIE_TOKEN: "/run/secrets/MEALIE_TOKEN"
             GIN_MODE: release
@@ -287,7 +287,7 @@ The meaning of each of the the [environment variables] is explained
 [Service]
 # Environment variables used to configure mealie-addons.
 # Replace each <TODO> by an appropriate value.
-Environment=MEALIE_BASE_URL=<TODO>/g/<TODO>
+Environment=MEALIE_BASE_URL=<TODO>
 Environment=MEALIE_RETRIEVAL_URL=<TODO>
 Environment=MEALIE_TOKEN=<TODO>
 Environment=MA_LISTEN_INTERFACE=<TODO>:<TODO>
@@ -339,12 +339,11 @@ The following explains all [environment variables] understood by
 `mealie-addons`.
 
 - `MEALIE_BASE_URL`:
-  The same value as the `BASE_URL` in your mealie config followed by `/g/` and
-  by the name of the group whose data you wish to export.
-  The first part is the URL that you can reach mealie from externally.
+  The same value as the `BASE_URL` in your mealie config.
+  This is the URL that you can reach mealie from externally.
 
-  - Example of a [mealie] instance at `http://my-mealie.org` and a group `home`:
-    `http://my-mealie.org/g/home`
+  - Example of a [mealie] instance at `http://my-mealie.org`:
+    `http://my-mealie.org`
 
 - `MEALIE_RETRIEVAL_URL` The URL that `mealie-addons` shall use to retrieve data
   from [mealie].

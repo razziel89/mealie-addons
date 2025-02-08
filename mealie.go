@@ -270,7 +270,7 @@ func (m mealie) addAuth(req *http.Request) {
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", m.token))
 }
 
-func (m mealie) check() (err error) {
+func (m mealie) check() (group string, err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
@@ -284,25 +284,25 @@ func (m mealie) check() (err error) {
 	var user userResponse
 	req, err := http.NewRequestWithContext(ctx, "GET", m.url+"/api/users/self", nil)
 	if err != nil {
-		return err
+		return "", err
 	}
 	m.addAuth(req)
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return err
+		return "", err
 	}
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return err
+		return "", err
 	}
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("unexpected status code %d: %s", resp.StatusCode, string(body))
+		return "", fmt.Errorf("unexpected status code %d: %s", resp.StatusCode, string(body))
 	}
 	err = json.Unmarshal(body, &user)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	log.Println("successful login with user", user)
-	return nil
+	return strings.ToLower(user.Group), nil
 }

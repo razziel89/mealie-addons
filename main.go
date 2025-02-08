@@ -31,8 +31,10 @@ func main() {
 
 	mealie := mealie{url: cfg.mealieRetrievalURL, token: cfg.mealieToken, limiter: limiter}
 	works, try := false, 1
+	var group string
 	for !works && try <= cfg.startupGraceSecs {
-		err := mealie.check()
+		var err error
+		group, err = mealie.check()
 		if err != nil {
 			log.Printf(
 				"cannot connect to mealie, retrying at most %d times every 1s: %s",
@@ -47,6 +49,8 @@ func main() {
 	if !works {
 		log.Fatalf("mealie connection cannot be established")
 	}
+
+	cfg.mealieBaseURL = cfg.mealieBaseURL + "/g/" + group
 
 	// API.
 	startAPIFn, serverShutdown := setUpAPI(

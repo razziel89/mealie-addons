@@ -59,9 +59,15 @@ func initConfig() (cfg config, err error) {
 		token = strings.TrimSpace(tokenInput)
 	}
 
+	mealieBaseURL := os.Getenv("MEALIE_BASE_URL")
+	// This block is used solely for backwards compatibility.
+	if idx := strings.LastIndex(mealieBaseURL, "/g/"); idx != -1 {
+		mealieBaseURL = mealieBaseURL[:idx]
+	}
+
 	cfg = config{
 		mealieRetrievalURL: os.Getenv("MEALIE_RETRIEVAL_URL"),
-		mealieBaseURL:      os.Getenv("MEALIE_BASE_URL"),
+		mealieBaseURL:      mealieBaseURL,
 		mealieToken:        token,
 		listenInterface:    os.Getenv("MA_LISTEN_INTERFACE"),
 		retrievalLimit:     retrievalLimit,
