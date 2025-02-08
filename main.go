@@ -23,7 +23,13 @@ func main() {
 		log.Fatalf("missing executable: %s", err.Error())
 	}
 
-	mealie := mealie{url: cfg.mealieRetrievalURL, token: cfg.mealieToken, limit: cfg.retrievalLimit}
+	var limiter chan bool = nil
+	if cfg.retrievalLimit > 0 {
+		log.Printf("retrieving at most %d recipes in parallel", cfg.retrievalLimit)
+		limiter = make(chan bool, cfg.retrievalLimit)
+	}
+
+	mealie := mealie{url: cfg.mealieRetrievalURL, token: cfg.mealieToken, limiter: limiter}
 	works, try := false, 1
 	for !works && try <= cfg.startupGraceSecs {
 		err := mealie.check()

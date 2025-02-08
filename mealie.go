@@ -129,9 +129,9 @@ type slug struct {
 type getRecipesFn func(ctx context.Context, queryParams map[string][]string) ([]recipe, error)
 
 type mealie struct {
-	url   string
-	token string
-	limit int
+	url     string
+	token   string
+	limiter chan bool
 	// defaultQuery map[string][]string
 }
 
@@ -239,20 +239,14 @@ func (m mealie) getRecipes(ctx context.Context, queryParams map[string][]string)
 	recipes := make([]recipe, len(slugs))
 	errs := make([]error, len(slugs))
 
-	var limiter chan bool
-	if m.limit > 0 {
-		log.Printf("retrieving at most %d recipes in total", m.limit)
-		limiter = make(chan bool, m.limit)
-	}
-
 	for idx, slug := range slugs {
 		// Avoid loop pointer weirdness.
 		idx := idx
 		slug := slug
 		// Retrieve all recipes in parallel. Let'ssee if this works.
 		go func() {
-			if m.limit > 0 {
-				limiter <- true
+			if m.limiter != nil {
+				m.limiter <- true
 			}
 			recipe, err := m.getRecipe(ctx, slug.Slug)
 			if err == nil {
@@ -262,8 +256,8 @@ func (m mealie) getRecipes(ctx context.Context, queryParams map[string][]string)
 				errs[idx] = err
 			}
 			wg.Done()
-			if m.limit > 0 {
-				<-limiter
+			if m.limiter != nil {
+				<-m.limiter
 			}
 		}()
 	}
