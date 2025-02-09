@@ -16,6 +16,7 @@ type config struct {
 	retrievalLimit     int
 	timeoutSecs        int
 	startupGraceSecs   int
+	pandocFlags        []string
 }
 
 func initConfig() (cfg config, err error) {
@@ -65,6 +66,14 @@ func initConfig() (cfg config, err error) {
 		mealieBaseURL = mealieBaseURL[:idx]
 	}
 
+	pandocFlags := []string{}
+	for _, line := range strings.Split(os.Getenv("PANDOC_FLAGS"), "\n") {
+		// Ignore empty lines.
+		if strings.TrimSpace(line) != "" {
+			pandocFlags = append(pandocFlags, line)
+		}
+	}
+
 	cfg = config{
 		mealieRetrievalURL: os.Getenv("MEALIE_RETRIEVAL_URL"),
 		mealieBaseURL:      mealieBaseURL,
@@ -73,6 +82,7 @@ func initConfig() (cfg config, err error) {
 		retrievalLimit:     retrievalLimit,
 		timeoutSecs:        timeoutSecs,
 		startupGraceSecs:   startupGraceSecs,
+		pandocFlags:        pandocFlags,
 	}
 	return
 }

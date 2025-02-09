@@ -52,7 +52,7 @@ func main() {
 
 	cfg.mealieBaseURL = cfg.mealieBaseURL + "/g/" + group
 
-	pandoc := pandoc{options: nil}
+	pandoc := pandoc{options: cfg.pandocFlags}
 
 	// API.
 	startAPIFn, serverShutdown := setUpAPI(
