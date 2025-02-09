@@ -52,6 +52,8 @@ func main() {
 
 	cfg.mealieBaseURL = cfg.mealieBaseURL + "/g/" + group
 
+	pandoc := pandoc{options: nil}
+
 	// API.
 	startAPIFn, serverShutdown := setUpAPI(
 		cfg.listenInterface,
@@ -59,9 +61,9 @@ func main() {
 		mealie.getRecipes,
 		[]responseGenerator{
 			&markdownGenerator{url: cfg.mealieBaseURL},
-			&epubGenerator{url: cfg.mealieBaseURL},
-			&pdfGenerator{url: cfg.mealieBaseURL},
-			&htmlGenerator{url: cfg.mealieBaseURL},
+			&epubGenerator{url: cfg.mealieBaseURL, pandoc: pandoc},
+			&pdfGenerator{url: cfg.mealieBaseURL, pandoc: pandoc},
+			&htmlGenerator{url: cfg.mealieBaseURL, pandoc: pandoc},
 		},
 	)
 

@@ -7,7 +7,8 @@ import (
 )
 
 type epubGenerator struct {
-	url string
+	url    string
+	pandoc pandoc
 }
 
 func (g *epubGenerator) commonName() string {
@@ -27,5 +28,5 @@ func (g *epubGenerator) response(
 	recipes []recipe,
 	timestamp time.Time,
 ) ([]byte, error) {
-	return runPandoc(ctx, buildMarkdown(recipes, g.url, timestamp), "epub")
+	return g.pandoc.run(ctx, buildMarkdown(recipes, g.url, timestamp), "epub")
 }

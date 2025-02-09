@@ -7,7 +7,8 @@ import (
 )
 
 type htmlGenerator struct {
-	url string
+	url    string
+	pandoc pandoc
 }
 
 func (g *htmlGenerator) commonName() string {
@@ -27,5 +28,5 @@ func (g *htmlGenerator) response(
 	recipes []recipe,
 	timestamp time.Time,
 ) ([]byte, error) {
-	return runPandoc(ctx, buildMarkdown(recipes, g.url, timestamp), "html")
+	return g.pandoc.run(ctx, buildMarkdown(recipes, g.url, timestamp), "html")
 }

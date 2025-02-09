@@ -10,6 +10,13 @@ import (
 	"strings"
 )
 
+var defaultPandocOptions = []string{
+	"--standalone",
+	"--pdf-engine=xelatex",
+	"--variable=pagetitle:",
+	"--variable=geometry:margin=2cm",
+}
+
 // Call an executable with arguments and return stdout and stderr. Specify the executable via
 // "exe"", the arguments via "args", additional environment variables in the form "key=value" via
 // "env", and standard input via "stdin". The command will be cancelled automatically when the
@@ -33,6 +40,10 @@ func runExe(
 	return stdout.Bytes(), stderr.String(), err
 }
 
+type pandoc struct {
+	options []string
+}
+
 func checkForPandoc() error {
 	_, err := exec.LookPath("pandoc")
 	if err != nil {
@@ -44,15 +55,11 @@ func checkForPandoc() error {
 // We convert twice for anything that isn't HTML. The reason is that links in the document are
 // broken unless we first convert to HTML, but if we do that, they work also for other formats. No
 // clue why that is.
-func runPandoc(ctx context.Context, markdownInput string, toFormat string) ([]byte, error) {
-	args := []string{
-		"--from=markdown",
-		"--to=html",
-		"--output=-",
-		// Not all options below are needed for all converters, but they also don't hurt.
-		"--standalone",
-		"--pdf-engine=xelatex",
-	}
+func (p *pandoc) run(ctx context.Context, markdownInput string, toFormat string) ([]byte, error) {
+	args := append([]string{}, defaultPandocOptions...)
+	args = append(args, p.options...)
+	args = append(args, "--from=markdown", "--to=html", "--output=-")
+
 	html, errMsg, err := runExe(ctx, "pandoc", args, nil, []byte(markdownInput))
 	if err != nil {
 		return nil, err
