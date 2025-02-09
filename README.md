@@ -198,6 +198,8 @@ Simply add `mealie-addons` as a separate service as shown below.
 
 In the below example, `mealie-addons` will be accessible under the same URL as
 [mealie] but on port 9926 as compared to [mealie]'s port 9925.
+Furthermore, any generated EPUB file will not have a title page in the below
+example.
 The meaning of each of the the [environment variables] is explained
 [below](#environment-variables).
 
@@ -239,6 +241,9 @@ services:
             MEALIE_RETRIEVAL_URL: "http://mealie:9000"
             MEALIE_TOKEN: "/run/secrets/MEALIE_TOKEN"
             GIN_MODE: release
+            PANDOC_FLAGS: |-
+                --epub-title-page
+                false
         secrets:
             - MEALIE_TOKEN
 
@@ -265,6 +270,8 @@ its own.
 In the below example, `mealie-addons` will be accessible on port 9926.
 In this example, `mealie-addons` will access a [mealie] installation accessible
 at `https://mealie.yourdomain.com`.
+Furthermore, any generated EPUB file will not have a title page in the below
+example.
 The meaning of each of the the [environment variables] is explained
 [below](#environment-variables).
 
@@ -286,6 +293,9 @@ services:
             MEALIE_RETRIEVAL_URL: "https://mealie.yourdomain.com"
             MEALIE_TOKEN: "/run/secrets/MEALIE_TOKEN"
             GIN_MODE: release
+            PANDOC_FLAGS: |-
+                --epub-title-page
+                false
         secrets:
             - MEALIE_TOKEN
 
@@ -317,6 +327,7 @@ Environment=MA_LISTEN_INTERFACE=<TODO>:<TODO>
 Environment=MA_RETRIEVAL_LIMIT=<TODO>
 Environment=MA_STARTUP_GRACE_SECS=<TODO>
 Environment=MA_TIMEOUT_SECS=<TODO>
+Environment=PANDOC_FLAGS=<TODO>
 
 # A local user account that this service shall run as. Do not use root.
 User=<TODO>
@@ -414,6 +425,34 @@ The following explains all [environment variables] understood by
   It also helps prevent running into HTTP timeouts.
   This value must be large enough for the file to be successfully generated and
   downloaded.
+
+- `PANDOC_FLAGS`:
+  Additional flags that shall be passed to any call of [pandoc].
+  This allows for customisation of the generated files.
+  The value of the environment variable is interpreted to be a multi-line string
+  that is split at each line break.
+  That way, arguments containing whitespace other than newlines are supported.
+  Each line will be passed to [pandoc] as a separate argument, but empty lines
+  will be ignored.
+
+  - Example disabling title pages for all generated EPUB files, defining the
+    value in a docker-compose file:
+    ```yaml
+    environment:
+        # It is recommended to define PANDOC_FLAGS using the `|-` string
+        # specifier.
+        PANDOC_FLAGS: |-
+            --epub-title-page
+            false
+    ```
+  - Example identical to the previous one but defining the same value on a
+    single line.
+    Note the additional `=` before the value:
+    ```yaml
+    environment:
+        PANDOC_FLAGS: |-
+            --epub-title-page=false
+    ```
 
 # How To Contribute
 
