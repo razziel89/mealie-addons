@@ -13,7 +13,6 @@ import (
 var defaultPandocOptions = []string{
 	"--standalone",
 	"--pdf-engine=xelatex",
-	"--variable=pagetitle:",
 	"--variable=geometry:margin=2cm",
 }
 

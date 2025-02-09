@@ -89,8 +89,9 @@ func buildMarkdown(recipes []recipe, url string, timestamp time.Time) string {
 
 	// Table of contents and header
 	header := fmt.Sprintf(`---
+pagetitle: "Exported Recipes @ %s"
 title: "Exported Recipes @ %s"
----`, timestamp.Format(time.RFC3339))
+---`, timestamp.Format(time.RFC3339), timestamp.Format(time.RFC3339))
 
 	toc := `# Table Of Contents
 
