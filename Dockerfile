@@ -3,7 +3,9 @@ RUN \
   apt-get update && \
   DEBIAN_FRONTEND=noninteractive apt-get install -y make git
 WORKDIR /app
-COPY * ./
+COPY go.* ./
+RUN go mod download
+COPY *.go Makefile ./
 RUN make build
 
 FROM ubuntu:24.04
