@@ -60,22 +60,22 @@ func (p *pandoc) run(ctx context.Context, markdownInput string, toFormat string)
 	args = append(args, "--from=markdown", "--to=html", "--output=-")
 
 	html, errMsg, err := runExe(ctx, "pandoc", args, nil, []byte(markdownInput))
-	if err != nil {
-		return nil, err
-	}
 	if errMsg != "" {
 		log.Println("stderr when running pandoc:", errMsg)
+	}
+	if err != nil {
+		return nil, err
 	}
 	// Convert again, but to the desired format.
 	var converted []byte
 	if toFormat != "html" {
 		args = append(args, "--from=html", "--to", toFormat)
 		converted, errMsg, err = runExe(ctx, "pandoc", args, nil, html)
-		if err != nil {
-			return nil, err
-		}
 		if errMsg != "" {
 			log.Println("stderr when running pandoc:", errMsg)
+		}
+		if err != nil {
+			return nil, err
 		}
 	} else {
 		converted = html
