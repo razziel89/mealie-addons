@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"regexp"
 	"slices"
 	"sort"
 	"strings"
@@ -157,6 +158,16 @@ func slugify(s string) string {
 	return strings.Join(strings.Fields(strings.TrimSpace(strings.ToLower(s))), "-")
 }
 
+var embeddedImageRegex = regexp.MustCompilePOSIX(`<img src="[^"]*"[^/]*/>`)
+
+func removeEmbeddedImage(text string) string {
+	replaced := embeddedImageRegex.ReplaceAllString(text, "")
+	if replaced != text {
+		log.Printf("removed embedded image from text: %s", text)
+	}
+	return replaced
+}
+
 func recipeToMarkdown(recipe *recipe, url string) []string {
 	result := []string{}
 
@@ -208,7 +219,7 @@ Total time: %s
 	if len(recipe.Instructions) > 0 {
 		result = append(result, "- **Instructions**:")
 		for _, tmp := range recipe.Instructions {
-			result = append(result, fmt.Sprintf("    - %s", tmp.Text))
+			result = append(result, fmt.Sprintf("    - %s", removeEmbeddedImage(tmp.Text)))
 		}
 	}
 
