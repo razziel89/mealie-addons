@@ -8,7 +8,7 @@ import (
 
 type epubGenerator struct {
 	url    string
-	pandoc pandoc
+	pandoc *pandoc
 }
 
 func (g *epubGenerator) commonName() string {

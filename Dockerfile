@@ -1,7 +1,8 @@
 FROM golang:1.23-bookworm AS builder
 RUN \
   apt-get update && \
-  DEBIAN_FRONTEND=noninteractive apt-get install -y make git
+  DEBIAN_FRONTEND=noninteractive apt-get install -y make git wget
+RUN wget -O /pandoc.deb https://github.com/jgm/pandoc/releases/download/3.6.3/pandoc-3.6.3-1-amd64.deb
 WORKDIR /app
 COPY go.* ./
 RUN go mod download
@@ -19,9 +20,17 @@ RUN \
     pandoc \
     texlive-latex-base \
     texlive-latex-extra \
-    texlive-xetex\
+    texlive-xetex \
+    texlive-luatex \
+  && \
+  rm -rf /var/lib/apt/lists/*
+COPY --from=builder /pandoc.deb .
+RUN \
+  apt-get update && \
+  DEBIAN_FRONTEND=noninteractive apt-get install -y ./pandoc.deb \
   && \
   rm -rf /var/lib/apt/lists/*
 WORKDIR /app
+COPY ./fonts/*.ttf .
 COPY --from=builder /app/mealie-addons .
 ENTRYPOINT ["/app/mealie-addons"]

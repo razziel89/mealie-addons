@@ -8,12 +8,20 @@ import (
 	"log"
 	"os/exec"
 	"strings"
+	"time"
 )
 
 var defaultPandocOptions = []string{
+	"--verbose",
+	"--verbose",
+	"--verbose",
 	"--standalone",
-	"--pdf-engine=xelatex",
+	"--pdf-engine=lualatex",
 	"--variable=geometry:margin=2cm",
+	"--variable=mainfont:notosans.ttf",
+	"--variable=mainfontfallback:[notosanssc.ttf]",
+	"--variable=mainfontfallback:[notosanssymbols.ttf]",
+	`--variable=header-includes:\usepackage[utf8x]{inputenc}`,
 }
 
 // Call an executable with arguments and return stdout and stderr. Specify the executable via
@@ -48,6 +56,19 @@ func checkForPandoc() error {
 	if err != nil {
 		return fmt.Errorf("failed to find pandoc in path: %s", err.Error())
 	}
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	output, _, err := runExe(
+		ctx,
+		"pandoc",
+		[]string{"--version"},
+		nil,
+		nil,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to run pandoc --version: %s", err.Error())
+	}
+	log.Printf("pandoc version information:\n%s", output)
 	return nil
 }
 
@@ -57,7 +78,7 @@ func checkForPandoc() error {
 func (p *pandoc) run(ctx context.Context, markdownInput string, toFormat string) ([]byte, error) {
 	args := append([]string{}, defaultPandocOptions...)
 	args = append(args, p.options...)
-	args = append(args, "--from=markdown", "--to=html", "--output=-")
+	args = append(args, "--from=markdown", "--to=html", "--output=-", "-")
 
 	html, errMsg, err := runExe(ctx, "pandoc", args, nil, []byte(markdownInput))
 	if errMsg != "" {

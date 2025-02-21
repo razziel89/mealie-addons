@@ -8,7 +8,7 @@ import (
 
 type pdfGenerator struct {
 	url    string
-	pandoc pandoc
+	pandoc *pandoc
 }
 
 func (g *pdfGenerator) commonName() string {

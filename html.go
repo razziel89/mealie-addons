@@ -8,7 +8,7 @@ import (
 
 type htmlGenerator struct {
 	url    string
-	pandoc pandoc
+	pandoc *pandoc
 }
 
 func (g *htmlGenerator) commonName() string {

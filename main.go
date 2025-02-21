@@ -61,9 +61,9 @@ func main() {
 		mealie.getRecipes,
 		[]responseGenerator{
 			&markdownGenerator{url: cfg.mealieBaseURL},
-			&epubGenerator{url: cfg.mealieBaseURL, pandoc: pandoc},
-			&pdfGenerator{url: cfg.mealieBaseURL, pandoc: pandoc},
-			&htmlGenerator{url: cfg.mealieBaseURL, pandoc: pandoc},
+			&epubGenerator{url: cfg.mealieBaseURL, pandoc: &pandoc},
+			&pdfGenerator{url: cfg.mealieBaseURL, pandoc: &pandoc},
+			&htmlGenerator{url: cfg.mealieBaseURL, pandoc: &pandoc},
 		},
 	)
 
