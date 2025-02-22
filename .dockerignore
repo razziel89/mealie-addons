@@ -2,4 +2,3 @@
 !*.go
 !go.*
 !Makefile
-!fonts/*.ttf
