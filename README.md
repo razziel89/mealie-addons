@@ -242,8 +242,7 @@ services:
             MEALIE_TOKEN: "/run/secrets/MEALIE_TOKEN"
             GIN_MODE: release
             PANDOC_FLAGS: |-
-                --epub-title-page
-                false
+                --epub-title-page=false
         secrets:
             - MEALIE_TOKEN
 
@@ -294,8 +293,7 @@ services:
             MEALIE_TOKEN: "/run/secrets/MEALIE_TOKEN"
             GIN_MODE: release
             PANDOC_FLAGS: |-
-                --epub-title-page
-                false
+                --epub-title-page=false
         secrets:
             - MEALIE_TOKEN
 
@@ -428,12 +426,10 @@ The following explains all [environment variables] understood by
 
 - `PANDOC_FLAGS`:
   Additional flags that shall be passed to any call of [pandoc].
+  This environment variable is optional.
   This allows for customisation of the generated files.
-  The value of the environment variable is interpreted to be a multi-line string
-  that is split at each line break.
-  That way, arguments containing whitespace other than newlines are supported.
-  Each line will be passed to [pandoc] as a separate argument, but empty lines
-  will be ignored.
+  The value of the environment variable is split into individual arguments at
+  each consecutive occurrence of whitespace.
 
   - Example disabling title pages for all generated EPUB files, defining the
     value in a docker-compose file:
@@ -441,15 +437,6 @@ The following explains all [environment variables] understood by
     environment:
         # It is recommended to define PANDOC_FLAGS using the `|-` string
         # specifier.
-        PANDOC_FLAGS: |-
-            --epub-title-page
-            false
-    ```
-  - Example identical to the previous one but defining the same value on a
-    single line.
-    Note the additional `=` before the value:
-    ```yaml
-    environment:
         PANDOC_FLAGS: |-
             --epub-title-page=false
     ```
