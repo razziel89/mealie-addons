@@ -53,6 +53,10 @@ func main() {
 	cfg.mealieBaseURL = cfg.mealieBaseURL + "/g/" + group
 
 	pandoc := pandoc{options: cfg.pandocFlags}
+	err = pandoc.loadFonts(cfg.pandocFontsDir)
+	if err != nil {
+		log.Printf("failed to load fonts, skipping: %s", err.Error())
+	}
 
 	// API.
 	startAPIFn, serverShutdown := setUpAPI(

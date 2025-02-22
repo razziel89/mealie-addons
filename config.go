@@ -17,6 +17,7 @@ type config struct {
 	timeoutSecs        int
 	startupGraceSecs   int
 	pandocFlags        []string
+	pandocFontsDir     string
 }
 
 func initConfig() (cfg config, err error) {
@@ -66,12 +67,16 @@ func initConfig() (cfg config, err error) {
 		mealieBaseURL = mealieBaseURL[:idx]
 	}
 
-	pandocFlags := []string{}
-	for _, line := range strings.Split(os.Getenv("PANDOC_FLAGS"), "\n") {
-		// Ignore empty lines.
-		if strings.TrimSpace(line) != "" {
-			pandocFlags = append(pandocFlags, line)
+	pandocFlags := strings.Fields(os.Getenv("PANDOC_FLAGS"))
+
+	pandocFontsDir := os.Getenv("PANDOC_FONTS_DIR")
+	if pandocFontsDir == "" {
+		cwd, cwdErr := os.Getwd()
+		if cwdErr != nil {
+			err = fmt.Errorf("failed to get current working directory: %s", cwdErr.Error())
+			return
 		}
+		pandocFontsDir = cwd
 	}
 
 	cfg = config{
@@ -83,6 +88,7 @@ func initConfig() (cfg config, err error) {
 		timeoutSecs:        timeoutSecs,
 		startupGraceSecs:   startupGraceSecs,
 		pandocFlags:        pandocFlags,
+		pandocFontsDir:     pandocFontsDir,
 	}
 	return
 }

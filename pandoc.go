@@ -6,7 +6,9 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"time"
 )
@@ -18,10 +20,6 @@ var defaultPandocOptions = []string{
 	"--standalone",
 	"--pdf-engine=lualatex",
 	"--variable=geometry:margin=2cm",
-	"--variable=mainfont:notosans.ttf",
-	"--variable=mainfontfallback:[notosanssc.ttf]",
-	"--variable=mainfontfallback:[notosanssymbols.ttf]",
-	`--variable=header-includes:\usepackage[utf8x]{inputenc}`,
 }
 
 // Call an executable with arguments and return stdout and stderr. Specify the executable via
@@ -48,7 +46,67 @@ func runExe(
 }
 
 type pandoc struct {
-	options []string
+	options       []string
+	mainFont      string
+	fallbackFonts []string
+}
+
+func (p *pandoc) loadFonts(dir string) error {
+	dir, err := filepath.Abs(dir)
+	if err != nil {
+		return fmt.Errorf("failed to resolve absolute path of %s: %s", dir, err.Error())
+	}
+	cwd, err := os.Getwd()
+	if err != nil {
+		return fmt.Errorf("failed to get current working directory: %s", err.Error())
+	}
+	cwd, err = filepath.Abs(cwd)
+	if err != nil {
+		return fmt.Errorf("failed to resolve absolute path of %s: %s", cwd, err.Error())
+	}
+	doCopy := cwd != dir
+
+	content, err := os.ReadDir(dir)
+	if err != nil {
+		return fmt.Errorf("failed to list directory %s: %s", dir, err.Error())
+	}
+	filtered := make([]string, 0, len(content))
+	for _, file := range content {
+		isRelevant := false
+		if file.Name() == "main.ttf" {
+			p.mainFont = "--variable=mainfont:" + file.Name()
+			isRelevant = true
+		} else if strings.HasSuffix(file.Name(), ".ttf") {
+			arg := fmt.Sprintf("--variable=mainfontfallback:[%s]", file.Name())
+			filtered = append(filtered, arg)
+			isRelevant = true
+		}
+		if doCopy && isRelevant {
+			err = copyFile(filepath.Join(dir, file.Name()), filepath.Join(cwd, file.Name()))
+			if err != nil {
+				return fmt.Errorf(
+					"failed to copy relevant font file %s/%s: %s",
+					dir, file.Name(), err.Error(),
+				)
+			}
+		}
+	}
+	if len(filtered) != 0 {
+		p.fallbackFonts = filtered
+	}
+	return nil
+}
+
+func copyFile(source string, destination string) error {
+	data, err := os.ReadFile(source)
+	if err != nil {
+		return fmt.Errorf("failed to read source file %s: %s", source, err.Error())
+	}
+	err = os.WriteFile(destination, data, 0644)
+	if err != nil {
+		return fmt.Errorf("failed to write destination file %s: %s", destination, err.Error())
+	}
+	return nil
 }
 
 func checkForPandoc() error {
@@ -77,6 +135,12 @@ func checkForPandoc() error {
 // clue why that is.
 func (p *pandoc) run(ctx context.Context, markdownInput string, toFormat string) ([]byte, error) {
 	args := append([]string{}, defaultPandocOptions...)
+	if p.mainFont != "" {
+		args = append(args, p.mainFont)
+	}
+	if p.fallbackFonts != nil {
+		args = append(args, p.fallbackFonts...)
+	}
 	args = append(args, p.options...)
 	args = append(args, "--from=markdown", "--to=html", "--output=-", "-")
 
