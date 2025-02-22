@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 )
@@ -91,6 +92,7 @@ func (p *pandoc) loadFonts(dir string) error {
 			}
 		}
 	}
+	slices.Sort(filtered)
 	if len(filtered) != 0 {
 		p.fallbackFonts = filtered
 	}
