@@ -464,11 +464,20 @@ The following explains all [environment variables] understood by
   alphabetically.
 
 - `PANDOC_FLAGS`:
-  Additional flags that shall be passed to any call of [pandoc].
+  Additional flags that shall be passed to [pandoc].
+  This environment variable has no effect for markdown output.
   This environment variable is optional and defaults to the empty string.
-  This allows for customisation of the generated files.
+  It allows for customisation of the generated files.
   The value of the environment variable is split into individual arguments at
-  each consecutive occurrence of whitespace.
+  each consecutive occurrence of white space.
+
+  If a flag is prefixed by the literal string `@first:`, then it will only be
+  passed to the first call to [pandoc], i.e. the call that converts from
+  markdown to HTML.
+  If a flag is prefixed by the literal string `@last:`, then it will only be
+  passed to the last call to [pandoc], i.e. the call converting from HTML to the
+  desired output format.
+  Flags prefixed by `@last:` have no effect for HTML output.
 
   - Example disabling title pages for all generated EPUB files, defining the
     value in a docker-compose file:

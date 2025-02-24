@@ -136,17 +136,28 @@ func checkForPandoc() error {
 // broken unless we first convert to HTML, but if we do that, they work also for other formats. No
 // clue why that is.
 func (p *pandoc) run(ctx context.Context, markdownInput string, toFormat string) ([]byte, error) {
-	args := append([]string{}, defaultPandocOptions...)
+	alwaysArgs := append([]string{}, defaultPandocOptions...)
 	if p.mainFont != "" {
-		args = append(args, p.mainFont)
+		alwaysArgs = append(alwaysArgs, p.mainFont)
 	}
 	if p.fallbackFonts != nil {
-		args = append(args, p.fallbackFonts...)
+		alwaysArgs = append(alwaysArgs, p.fallbackFonts...)
 	}
-	args = append(args, p.options...)
-	args = append(args, "--from=markdown", "--to=html", "--output=-", "-")
+	for _, arg := range p.options {
+		if !strings.HasPrefix(arg, "@first:") && !strings.HasPrefix(arg, "@last:") {
+			alwaysArgs = append(alwaysArgs, arg)
+		}
+	}
 
-	html, errMsg, err := runExe(ctx, "pandoc", args, nil, []byte(markdownInput))
+	firstArgs := append([]string{}, alwaysArgs...)
+	for _, arg := range p.options {
+		if strings.HasPrefix(arg, "@first:") {
+			firstArgs = append(firstArgs, strings.TrimPrefix(arg, "@first:"))
+		}
+	}
+	firstArgs = append(firstArgs, "--from=markdown", "--to=html", "--output=-", "-")
+
+	html, errMsg, err := runExe(ctx, "pandoc", firstArgs, nil, []byte(markdownInput))
 	if errMsg != "" {
 		log.Println("stderr when running pandoc:", errMsg)
 	}
@@ -156,8 +167,15 @@ func (p *pandoc) run(ctx context.Context, markdownInput string, toFormat string)
 	// Convert again, but to the desired format.
 	var converted []byte
 	if toFormat != "html" {
-		args = append(args, "--from=html", "--to", toFormat)
-		converted, errMsg, err = runExe(ctx, "pandoc", args, nil, html)
+		lastArgs := append([]string{}, alwaysArgs...)
+		for _, arg := range p.options {
+			if strings.HasPrefix(arg, "@last:") {
+				lastArgs = append(lastArgs, strings.TrimPrefix(arg, "@last:"))
+			}
+		}
+		lastArgs = append(lastArgs, "--from=html", "--to", toFormat, "--output=-", "-")
+
+		converted, errMsg, err = runExe(ctx, "pandoc", lastArgs, nil, html)
 		if errMsg != "" {
 			log.Println("stderr when running pandoc:", errMsg)
 		}
