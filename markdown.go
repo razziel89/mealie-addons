@@ -13,7 +13,8 @@ import (
 )
 
 type markdownGenerator struct {
-	url string
+	url    string
+	pandoc *pandoc
 }
 
 func (g *markdownGenerator) commonName() string {
@@ -29,15 +30,23 @@ func (g *markdownGenerator) mimeType() string {
 }
 
 func (g *markdownGenerator) response(
-	// Ignoring context here because building the markdown itself is very fast.
-	_ context.Context,
+	ctx context.Context,
 	recipes []recipe,
 	timestamp time.Time,
 ) ([]byte, error) {
-	return []byte(buildMarkdown(recipes, g.url, timestamp)), nil
+	return g.pandoc.run(
+		ctx,
+		buildMarkdown(recipes, g.url),
+		"markdown_github",
+		buildTitle(timestamp),
+	)
 }
 
-func buildMarkdown(recipes []recipe, url string, timestamp time.Time) string {
+func buildTitle(timestamp time.Time) string {
+	return fmt.Sprintf("Exported Recipes @ %s", timestamp.Format(time.RFC3339))
+}
+
+func buildMarkdown(recipes []recipe, url string) string {
 	// Extract all known categories and tags to build the index at the end.
 	tags := map[string]bool{}
 	categories := map[string]bool{}
@@ -87,22 +96,6 @@ func buildMarkdown(recipes []recipe, url string, timestamp time.Time) string {
 	}
 
 	result := []string{}
-
-	// Table of contents and header
-	header := fmt.Sprintf(`---
-pagetitle: "Exported Recipes @ %s"
-title: "Exported Recipes @ %s"
----`, timestamp.Format(time.RFC3339), timestamp.Format(time.RFC3339))
-
-	toc := `# Table Of Contents
-
-- [Recipes](#recipes)
-- [Tags](#tags)
-- [Categories](#categories)
-
-<div style="page-break-before: always;"></div>
-`
-	result = append(result, header, toc)
 
 	// Recipes.
 	result = append(result, "# Recipes")
