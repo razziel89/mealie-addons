@@ -61,6 +61,7 @@ type pandoc struct {
 	options       []string
 	mainFont      string
 	fallbackFonts []string
+	htmlHook      func([]byte) ([]byte, error)
 }
 
 func (p *pandoc) loadFonts(dir string) error {
@@ -178,6 +179,13 @@ func (p *pandoc) run(
 	}
 	if err != nil {
 		return nil, err
+	}
+
+	if p.htmlHook != nil {
+		html, err = p.htmlHook(html)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// Convert again, but to the desired format.

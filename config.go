@@ -18,6 +18,7 @@ type config struct {
 	startupGraceSecs   int
 	pandocFlags        []string
 	pandocFontsDir     string
+	imageAction        string
 }
 
 func initConfig() (cfg config, err error) {
@@ -79,6 +80,19 @@ func initConfig() (cfg config, err error) {
 		pandocFontsDir = cwd
 	}
 
+	imageAction := strings.ToLower(os.Getenv("MA_IMAGE_ACTION"))
+	switch imageAction {
+	case "":
+		// The default action if none is set.
+		imageAction = "remove"
+	case "remove", "ignore":
+	// Other cases will be implemented later.
+	// case "embed":
+	default:
+		err = fmt.Errorf("unknown image action, must be 'ignore' or 'remove': %s", imageAction)
+		return
+	}
+
 	cfg = config{
 		mealieRetrievalURL: os.Getenv("MEALIE_RETRIEVAL_URL"),
 		mealieBaseURL:      mealieBaseURL,
@@ -89,6 +103,7 @@ func initConfig() (cfg config, err error) {
 		startupGraceSecs:   startupGraceSecs,
 		pandocFlags:        pandocFlags,
 		pandocFontsDir:     pandocFontsDir,
+		imageAction:        imageAction,
 	}
 	return
 }

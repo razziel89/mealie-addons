@@ -52,7 +52,17 @@ func main() {
 
 	cfg.mealieBaseURL = cfg.mealieBaseURL + "/g/" + group
 
-	pandoc := pandoc{options: cfg.pandocFlags}
+	var htmlHook func([]byte) ([]byte, error)
+	switch cfg.imageAction {
+	case "ignore": // No-op.
+	case "remove":
+		log.Println("image tags will be removed from HTML")
+		htmlHook = func(html []byte) ([]byte, error) {
+			return removeAllHtmlElements(html, "img")
+		}
+	}
+
+	pandoc := pandoc{options: cfg.pandocFlags, htmlHook: htmlHook}
 	err = pandoc.loadFonts(cfg.pandocFontsDir)
 	if err != nil {
 		log.Printf("failed to load fonts, skipping: %s", err.Error())
