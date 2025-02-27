@@ -124,6 +124,10 @@ amazing [pandoc] and served as a file download.
   the user's chosen output format.
 - Since `mealie-addons` uses [mealie]'s REST API, it can only ever export data
   associated with a single group per instance.
+- Since font handling differs fundamentally between PDFs and the other supported
+  output file types, PDF generation should use the [provided docker image].
+  Otherwise, only a very limited number of characters is supported unless the
+  `PANDOC_FONTS_DIR` environment variable is set appropriately.
 
 ## How To Use
 
@@ -243,6 +247,7 @@ services:
             MEALIE_TOKEN: "/run/secrets/MEALIE_TOKEN"
             GIN_MODE: release
             # The following environment variables are optional.
+            PANDOC_FONTS_DIR: .
             PANDOC_FLAGS: |-
                 --epub-title-page=false
         secrets:
@@ -296,6 +301,7 @@ services:
             MEALIE_TOKEN: "/run/secrets/MEALIE_TOKEN"
             GIN_MODE: release
             # The following environment variables are optional.
+            PANDOC_FONTS_DIR: .
             PANDOC_FLAGS: |-
                 --epub-title-page=false
         secrets:
@@ -331,6 +337,7 @@ Environment=MA_RETRIEVAL_LIMIT=<TODO>
 Environment=MA_STARTUP_GRACE_SECS=<TODO>
 Environment=MA_TIMEOUT_SECS=<TODO>
 # The following environment variables are optional.
+Environment=PANDOC_FONTS_DIR=<TODO>
 Environment=PANDOC_FLAGS=<TODO>
 
 # A local user account that this service shall run as. Do not use root.
@@ -430,6 +437,32 @@ The following explains all [environment variables] understood by
   This value must be large enough for the file to be successfully generated and
   downloaded.
 
+- `PANDOC_FONTS_DIR`:
+  A path to a directory that contains [TrueType font] files with the extension
+  `.ttf` that shall be used for generating PDFs.
+  This environment variable has no effect for output file types other than PDF.
+  This environment variable is optional and defaults to `.`, i.e. the
+  application's working directory.
+
+  By default, `mealie-addons`'s docker image comes with a set of fonts from the
+  [Noto font family] that cover many of the [characters defined by Unicode].
+  However, the fonts may not be to everybody's liking or they may not contain
+  all the characters a user requires.
+  To use custom fonts, put [TrueType font] files with the extension `.ttf` in a
+  directory and set this environment variable to the path to this directory.
+  Note that, when using a docker or docker-compose setup, this path has to point
+  to a directory _inside the container_ and not on the host system.
+  If the fonts are located on the host system, then the path on the host system
+  has to be mounted into the container.
+
+  At start-up, `mealie-addons` will load all [TrueType font] files from the
+  specified directory by copying them to its working directory.
+  A file called `main.ttf` will be used as the main font for the document.
+  All other [TrueType font] files will be used as fallback fonts in case a
+  character cannot be found in the main font.
+  The fallback fonts will be used in order after sorting the file names
+  alphabetically.
+
 - `PANDOC_FLAGS`:
   Additional flags that shall be passed to any call of [pandoc].
   This environment variable is optional and defaults to the empty string.
@@ -466,6 +499,7 @@ open-source licence, please contact me.
 I am very open to discussing this point.
 
 [API token]: https://docs.mealie.io/documentation/getting-started/api-usage/#getting-a-token
+[characters defined by Unicode]: https://en.wikipedia.org/wiki/List_of_Unicode_characters
 [environment variables]: https://en.wikipedia.org/wiki/Environment_variable
 [filtering]: https://docs.mealie.io/documentation/getting-started/api-usage/#filtering
 [GPLv3]: ./LICENCE
@@ -474,8 +508,11 @@ I am very open to discussing this point.
 [mealie's REST API]: https://docs.mealie.io/documentation/getting-started/api-usage/
 [mealie]: https://mealie.io/
 [nginx]: https://nginx.org/en/
+[Noto font family]: https://en.wikipedia.org/wiki/Noto_fonts
 [oauth2-proxy]: https://github.com/oauth2-proxy/oauth2-proxy
 [pandoc]: https://pandoc.org/
+[provided docker image]: https://github.com/razziel89/mealie-addons/pkgs/container/mealie-addons
 [SQLite example]: https://docs.mealie.io/documentation/getting-started/installation/sqlite/
+[TrueType font]: https://en.wikipedia.org/wiki/TrueType
 [URL encoding]: https://en.wikipedia.org/wiki/Percent-encoding
 [VPN]: https://en.wikipedia.org/wiki/Virtual_private_network
