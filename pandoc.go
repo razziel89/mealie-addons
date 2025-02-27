@@ -14,13 +14,24 @@ import (
 	"time"
 )
 
-var defaultPandocOptions = []string{
+var defaultPandocAlwaysArgs = []string{
 	"--verbose",
-	"--verbose",
-	"--verbose",
+	"--output=-",
+	"-",
+}
+
+var defaultPandocFirstArgs = []string{
+	"--from=markdown",
+	"--to=html5",
+}
+
+var defaultPandocLastArgs = []string{
+	"--from=html",
 	"--standalone",
 	"--pdf-engine=lualatex",
 	"--variable=geometry:margin=2cm",
+	"--table-of-contents=true",
+	"--epub-title-page=false",
 }
 
 // Call an executable with arguments and return stdout and stderr. Specify the executable via
@@ -135,27 +146,31 @@ func checkForPandoc() error {
 // We convert twice for anything that isn't HTML. The reason is that links in the document are
 // broken unless we first convert to HTML, but if we do that, they work also for other formats. No
 // clue why that is.
-func (p *pandoc) run(ctx context.Context, markdownInput string, toFormat string) ([]byte, error) {
-	alwaysArgs := append([]string{}, defaultPandocOptions...)
-	if p.mainFont != "" {
-		alwaysArgs = append(alwaysArgs, p.mainFont)
-	}
-	if p.fallbackFonts != nil {
-		alwaysArgs = append(alwaysArgs, p.fallbackFonts...)
-	}
+func (p *pandoc) run(
+	ctx context.Context,
+	markdownInput string,
+	toFormat string,
+	title string,
+) ([]byte, error) {
+	alwaysArgs := append([]string{}, defaultPandocAlwaysArgs...)
+	alwaysArgs = append(alwaysArgs, "--metadata", "title="+title, "--metadata", "pagetitle="+title)
+	alwaysUserArgs := []string{}
 	for _, arg := range p.options {
 		if !strings.HasPrefix(arg, "@first:") && !strings.HasPrefix(arg, "@last:") {
-			alwaysArgs = append(alwaysArgs, arg)
+			alwaysUserArgs = append(alwaysUserArgs, arg)
 		}
 	}
 
-	firstArgs := append([]string{}, alwaysArgs...)
+	// Convert to HTML first. Somehow, internal links are broken without doing so.
+	firstArgs := append([]string{}, alwaysUserArgs...)
 	for _, arg := range p.options {
 		if strings.HasPrefix(arg, "@first:") {
 			firstArgs = append(firstArgs, strings.TrimPrefix(arg, "@first:"))
 		}
 	}
-	firstArgs = append(firstArgs, "--from=markdown", "--to=html", "--output=-", "-")
+	firstArgs = append(firstArgs, alwaysArgs...)
+	firstArgs = append(firstArgs, defaultPandocFirstArgs...)
+	firstArgs = append(firstArgs, "--metadata", "title="+title, "--metadata", "pagetitle="+title)
 
 	html, errMsg, err := runExe(ctx, "pandoc", firstArgs, nil, []byte(markdownInput))
 	if errMsg != "" {
@@ -164,26 +179,30 @@ func (p *pandoc) run(ctx context.Context, markdownInput string, toFormat string)
 	if err != nil {
 		return nil, err
 	}
-	// Convert again, but to the desired format.
-	var converted []byte
-	if toFormat != "html" {
-		lastArgs := append([]string{}, alwaysArgs...)
-		for _, arg := range p.options {
-			if strings.HasPrefix(arg, "@last:") {
-				lastArgs = append(lastArgs, strings.TrimPrefix(arg, "@last:"))
-			}
-		}
-		lastArgs = append(lastArgs, "--from=html", "--to", toFormat, "--output=-", "-")
 
-		converted, errMsg, err = runExe(ctx, "pandoc", lastArgs, nil, html)
-		if errMsg != "" {
-			log.Println("stderr when running pandoc:", errMsg)
+	// Convert again, but to the desired format.
+	lastArgs := append([]string{}, alwaysUserArgs...)
+	for _, arg := range p.options {
+		if strings.HasPrefix(arg, "@last:") {
+			lastArgs = append(lastArgs, strings.TrimPrefix(arg, "@last:"))
 		}
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		converted = html
+	}
+	if p.mainFont != "" {
+		lastArgs = append(lastArgs, p.mainFont)
+	}
+	if p.fallbackFonts != nil {
+		lastArgs = append(lastArgs, p.fallbackFonts...)
+	}
+	lastArgs = append(lastArgs, alwaysArgs...)
+	lastArgs = append(lastArgs, defaultPandocLastArgs...)
+	lastArgs = append(lastArgs, "--to", toFormat)
+
+	converted, errMsg, err := runExe(ctx, "pandoc", lastArgs, nil, html)
+	if errMsg != "" {
+		log.Println("stderr when running pandoc:", errMsg)
+	}
+	if err != nil {
+		return nil, err
 	}
 	return converted, nil
 }
