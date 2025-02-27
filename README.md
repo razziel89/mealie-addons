@@ -233,6 +233,7 @@ services:
         ports:
             - "9926:9000"
         environment:
+            # The following environment variables are mandatory.
             MA_LISTEN_INTERFACE: ":9000"
             MA_RETRIEVAL_LIMIT: "5"
             MA_TIMEOUT_SECS: "60"
@@ -241,6 +242,7 @@ services:
             MEALIE_RETRIEVAL_URL: "http://mealie:9000"
             MEALIE_TOKEN: "/run/secrets/MEALIE_TOKEN"
             GIN_MODE: release
+            # The following environment variables are optional.
             PANDOC_FLAGS: |-
                 --epub-title-page=false
         secrets:
@@ -284,6 +286,7 @@ services:
         ports:
             - "9926:9000"
         environment:
+            # The following environment variables are mandatory.
             MA_LISTEN_INTERFACE: ":9000"
             MA_RETRIEVAL_LIMIT: "5"
             MA_TIMEOUT_SECS: "60"
@@ -292,6 +295,7 @@ services:
             MEALIE_RETRIEVAL_URL: "https://mealie.yourdomain.com"
             MEALIE_TOKEN: "/run/secrets/MEALIE_TOKEN"
             GIN_MODE: release
+            # The following environment variables are optional.
             PANDOC_FLAGS: |-
                 --epub-title-page=false
         secrets:
@@ -318,6 +322,7 @@ The meaning of each of the the [environment variables] is explained
 [Service]
 # Environment variables used to configure mealie-addons.
 # Replace each <TODO> by an appropriate value.
+# The following environment variables are mandatory.
 Environment=MEALIE_BASE_URL=<TODO>
 Environment=MEALIE_RETRIEVAL_URL=<TODO>
 Environment=MEALIE_TOKEN=<TODO>
@@ -325,6 +330,7 @@ Environment=MA_LISTEN_INTERFACE=<TODO>:<TODO>
 Environment=MA_RETRIEVAL_LIMIT=<TODO>
 Environment=MA_STARTUP_GRACE_SECS=<TODO>
 Environment=MA_TIMEOUT_SECS=<TODO>
+# The following environment variables are optional.
 Environment=PANDOC_FLAGS=<TODO>
 
 # A local user account that this service shall run as. Do not use root.
@@ -426,7 +432,7 @@ The following explains all [environment variables] understood by
 
 - `PANDOC_FLAGS`:
   Additional flags that shall be passed to any call of [pandoc].
-  This environment variable is optional.
+  This environment variable is optional and defaults to the empty string.
   This allows for customisation of the generated files.
   The value of the environment variable is split into individual arguments at
   each consecutive occurrence of whitespace.
