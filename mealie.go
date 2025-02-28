@@ -274,8 +274,6 @@ func (m mealie) getRecipes(ctx context.Context, queryParams map[string][]string)
 type mediaDownload struct {
 	content []byte
 	mime    string
-	length  string
-	disp    string
 }
 
 func (m mealie) getMedia(
@@ -315,10 +313,8 @@ func (m mealie) getMedia(
 	data := mediaDownload{
 		content: content,
 		mime:    resp.Header.Get("Content-Type"),
-		disp:    resp.Header.Get("Content-Disposition"),
-		length:  resp.Header.Get("Content-Length"),
 	}
-	log.Printf("retrieved media: %s, %s, %s", data.mime, data.length, data.disp)
+	log.Printf("retrieved media: %s", data.mime)
 
 	return data, nil
 }
