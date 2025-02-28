@@ -2,6 +2,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -56,9 +57,18 @@ func main() {
 	switch cfg.imageAction {
 	case "ignore": // No-op.
 	case "remove":
-		log.Println("image tags will be removed from HTML")
+		log.Println("image tags will be removed from resulting documents")
 		htmlHook = func(html []byte) ([]byte, error) {
 			return removeAllHtmlElements(html, "img")
+		}
+	case "embed":
+		log.Println("image tags will be embedded into resulting documents")
+		retrievalEndpoint := fmt.Sprintf(
+			"http://127.0.0.1:%d/image-retrieval/",
+			cfg.listenPort,
+		)
+		htmlHook = func(html []byte) ([]byte, error) {
+			return redirectImgSources(html, "/api/media/recipes/", retrievalEndpoint)
 		}
 	}
 

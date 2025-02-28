@@ -13,6 +13,7 @@ type config struct {
 	mealieBaseURL      string
 	mealieToken        string
 	listenInterface    string
+	listenPort         int
 	retrievalLimit     int
 	timeoutSecs        int
 	startupGraceSecs   int
@@ -44,6 +45,17 @@ func initConfig() (cfg config, err error) {
 		return
 	}
 	timeoutSecs, parseErr := strconv.Atoi(os.Getenv("MA_TIMEOUT_SECS"))
+	if parseErr != nil {
+		err = parseErr
+		return
+	}
+	interfaceEnv := os.Getenv("MA_LISTEN_INTERFACE")
+	_, portStr, found := strings.Cut(interfaceEnv, ":")
+	if !found {
+		err = fmt.Errorf("cannot find port in interface spec %s", interfaceEnv)
+		return
+	}
+	listenPort, parseErr := strconv.Atoi(portStr)
 	if parseErr != nil {
 		err = parseErr
 		return
@@ -85,9 +97,7 @@ func initConfig() (cfg config, err error) {
 	case "":
 		// The default action if none is set.
 		imageAction = "remove"
-	case "remove", "ignore":
-	// Other cases will be implemented later.
-	// case "embed":
+	case "remove", "ignore", "embed":
 	default:
 		err = fmt.Errorf("unknown image action, must be 'ignore' or 'remove': %s", imageAction)
 		return
@@ -97,7 +107,8 @@ func initConfig() (cfg config, err error) {
 		mealieRetrievalURL: os.Getenv("MEALIE_RETRIEVAL_URL"),
 		mealieBaseURL:      mealieBaseURL,
 		mealieToken:        token,
-		listenInterface:    os.Getenv("MA_LISTEN_INTERFACE"),
+		listenInterface:    interfaceEnv,
+		listenPort:         listenPort,
 		retrievalLimit:     retrievalLimit,
 		timeoutSecs:        timeoutSecs,
 		startupGraceSecs:   startupGraceSecs,

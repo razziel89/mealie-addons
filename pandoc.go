@@ -28,6 +28,7 @@ var defaultPandocFirstArgs = []string{
 var defaultPandocLastArgs = []string{
 	"--from=html",
 	"--standalone",
+	"--embed-resources",
 	"--pdf-engine=lualatex",
 	"--variable=geometry:margin=2cm",
 	"--table-of-contents=true",
