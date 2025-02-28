@@ -28,5 +28,5 @@ func (g *pdfGenerator) response(
 	recipes []recipe,
 	timestamp time.Time,
 ) ([]byte, error) {
-	return g.pandoc.run(ctx, buildMarkdown(recipes, g.url), "pdf", buildTitle(timestamp))
+	return g.pandoc.run(ctx, buildMarkdown(recipes, g.url), "pdf", buildTitle(timestamp), nil)
 }

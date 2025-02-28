@@ -153,6 +153,7 @@ func (p *pandoc) run(
 	markdownInput string,
 	toFormat string,
 	title string,
+	filetypeHook func([]byte) ([]byte, error),
 ) ([]byte, error) {
 	alwaysArgs := append([]string{}, defaultPandocAlwaysArgs...)
 	alwaysArgs = append(alwaysArgs, "--metadata", "title="+title, "--metadata", "pagetitle="+title)
@@ -184,6 +185,12 @@ func (p *pandoc) run(
 
 	if p.htmlHook != nil {
 		html, err = p.htmlHook(html)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if filetypeHook != nil {
+		html, err = filetypeHook(html)
 		if err != nil {
 			return nil, err
 		}

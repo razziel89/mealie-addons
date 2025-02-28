@@ -33,11 +33,15 @@ func (g *markdownGenerator) response(
 	recipes []recipe,
 	timestamp time.Time,
 ) ([]byte, error) {
+	htmlHook := func(html []byte) ([]byte, error) {
+		return removeAllHtmlElements(html, "img")
+	}
 	return g.pandoc.run(
 		ctx,
 		buildMarkdown(recipes, g.url),
 		"markdown_github",
 		buildTitle(timestamp),
+		htmlHook,
 	)
 }
 

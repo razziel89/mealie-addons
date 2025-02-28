@@ -28,5 +28,5 @@ func (g *epubGenerator) response(
 	recipes []recipe,
 	timestamp time.Time,
 ) ([]byte, error) {
-	return g.pandoc.run(ctx, buildMarkdown(recipes, g.url), "epub", buildTitle(timestamp))
+	return g.pandoc.run(ctx, buildMarkdown(recipes, g.url), "epub", buildTitle(timestamp), nil)
 }

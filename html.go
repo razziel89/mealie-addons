@@ -34,7 +34,7 @@ func (g *htmlGenerator) response(
 	recipes []recipe,
 	timestamp time.Time,
 ) ([]byte, error) {
-	return g.pandoc.run(ctx, buildMarkdown(recipes, g.url), "html", buildTitle(timestamp))
+	return g.pandoc.run(ctx, buildMarkdown(recipes, g.url), "html", buildTitle(timestamp), nil)
 }
 
 func removeAllHtmlElements(htmlInput []byte, element string) ([]byte, error) {
