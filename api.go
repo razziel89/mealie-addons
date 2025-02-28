@@ -113,27 +113,33 @@ func setUpAPI(
 		})
 	}
 
-	log.Println("setting up endpoint media retrieval")
-	router.GET("/media/:uuid/assets/:filename", func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(c.Request.Context(), timeout)
-		defer cancel()
+	for _, what := range []string{"assets", "images"} {
+		what := what
+		log.Printf("setting up endpoint for %s retrieval", what)
+		router.GET(fmt.Sprintf("/media/:uuid/%s/:filename", what), func(c *gin.Context) {
+			ctx, cancel := context.WithTimeout(c.Request.Context(), timeout)
+			defer cancel()
 
-		uuid := c.Param("uuid")
-		filename := c.Param("filename")
+			uuid := c.Param("uuid")
+			filename := c.Param("filename")
 
-		readCloser, err := getMedia(ctx, uuid, filename)
+			media, err := getMedia(ctx, uuid, filename, what)
+			c.Writer.Header().Set("Content-Type", media.mime)
+			c.Writer.Header().Set("Content-Disposition", media.disp)
+			c.Writer.Header().Set("Content-Length", media.length)
 
-		if err == nil {
-			_, err = io.Copy(c.Writer, readCloser)
-		}
-		if err == nil {
-			c.Status(http.StatusOK)
-		} else {
-			msg := fmt.Sprintf("unexpected error %s", err.Error())
-			log.Println(msg)
-			c.String(http.StatusInternalServerError, msg)
-		}
-	})
+			if err == nil {
+				_, err = io.Copy(c.Writer, bytes.NewReader(media.content))
+			}
+			if err == nil {
+				c.Status(http.StatusOK)
+			} else {
+				msg := fmt.Sprintf("unexpected error %s", err.Error())
+				log.Println(msg)
+				c.String(http.StatusInternalServerError, msg)
+			}
+		})
+	}
 
 	server := &http.Server{
 		Addr:              iface,

@@ -128,7 +128,7 @@ type slug struct {
 
 type (
 	getRecipesFn func(ctx context.Context, queryParams map[string][]string) ([]recipe, error)
-	getMediaFn   func(ctx context.Context, uuid string, filename string) (io.ReadCloser, error)
+	getMediaFn   func(ctx context.Context, uuid, filename, middle string) (mediaDownload, error)
 )
 
 type mealie struct {
@@ -269,26 +269,56 @@ func (m mealie) getRecipes(ctx context.Context, queryParams map[string][]string)
 	return recipes, errors.Join(errs...)
 }
 
+type mediaDownload struct {
+	content []byte
+	mime    string
+	length  string
+	disp    string
+}
+
 func (m mealie) getMedia(
 	ctx context.Context,
 	uuid string,
 	filename string,
-) (io.ReadCloser, error) {
+	middle string,
+) (mediaDownload, error) {
 	log.Printf("retrieving media %s/%s", uuid, filename)
 
-	url := fmt.Sprintf("%s/api/media/recipes/%s/%s", m.url, uuid, filename)
+	url := fmt.Sprintf("%s/api/media/recipes/%s/%s/%s", m.url, uuid, middle, filename)
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
-		return nil, err
+		return mediaDownload{}, err
 	}
 
 	m.addAuth(req)
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return nil, err
+		return mediaDownload{}, err
 	}
-	return resp.Body, nil
+	content, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return mediaDownload{}, err
+	}
+	if resp.StatusCode != http.StatusOK {
+		return mediaDownload{}, fmt.Errorf(
+			"unexpected status code %d: %s", resp.StatusCode, string(content),
+		)
+	}
+	err = resp.Body.Close()
+	if err != nil {
+		return mediaDownload{}, err
+	}
+
+	data := mediaDownload{
+		content: content,
+		mime:    resp.Header.Get("Content-Type"),
+		disp:    resp.Header.Get("Content-Disposition"),
+		length:  resp.Header.Get("Content-Length"),
+	}
+	log.Printf("retrieved media: %s, %s, %s", data.mime, data.length, data.disp)
+
+	return data, nil
 }
 
 func (m mealie) addAuth(req *http.Request) {
