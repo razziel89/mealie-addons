@@ -161,6 +161,16 @@ Total time: %s
 	if len(recipe.Description) > 0 {
 		result = append(result, fmt.Sprintf("%s\n", recipe.Description))
 	}
+	if len(recipe.Image) != 0 {
+		result = append(
+			result,
+			fmt.Sprintf(
+				"<img src=\"/api/media/recipes/%s/images/original.webp\" alt=\"%s\" width=\"150\">\n",
+				recipe.ID,
+				strings.ReplaceAll(recipe.Name, `"`, " "),
+			),
+		)
+	}
 	result = append(
 		result,
 		"- **Go to**: [Recipes](#recipes), [Tags](#tags), [Categories](#categories), "+

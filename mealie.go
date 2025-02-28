@@ -32,6 +32,7 @@ type recipe struct {
 	Instructions []*instruction `json:"recipeInstructions"`
 	Ingredients  []*ingredient  `json:"recipeIngredient"`
 	Comments     []*comment     `json:"comments"`
+	Image        string         `json:"image"`
 }
 
 func (r *recipe) normalise() {
@@ -40,6 +41,7 @@ func (r *recipe) normalise() {
 	r.TotalTime = collapseWhitespace(r.TotalTime)
 	r.Description = collapseWhitespace(r.Description)
 	r.OrgURL = collapseWhitespace(r.OrgURL)
+	r.Image = collapseWhitespace(r.Image)
 	for _, category := range r.Categories {
 		category.normalise()
 	}
