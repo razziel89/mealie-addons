@@ -41,6 +41,7 @@ func setUpAPI(
 	iface string,
 	timeout time.Duration,
 	getRecipes getRecipesFn,
+	getMedia getMediaFn,
 	generators []responseGenerator,
 ) (func(), func(time.Duration) error) {
 	router := gin.Default()
@@ -111,6 +112,28 @@ func setUpAPI(
 			}
 		})
 	}
+
+	log.Println("setting up endpoint media retrieval")
+	router.GET("/media/:uuid/assets/:filename", func(c *gin.Context) {
+		ctx, cancel := context.WithTimeout(c.Request.Context(), timeout)
+		defer cancel()
+
+		uuid := c.Param("uuid")
+		filename := c.Param("filename")
+
+		readCloser, err := getMedia(ctx, uuid, filename)
+
+		if err == nil {
+			_, err = io.Copy(c.Writer, readCloser)
+		}
+		if err == nil {
+			c.Status(http.StatusOK)
+		} else {
+			msg := fmt.Sprintf("unexpected error %s", err.Error())
+			log.Println(msg)
+			c.String(http.StatusInternalServerError, msg)
+		}
+	})
 
 	server := &http.Server{
 		Addr:              iface,

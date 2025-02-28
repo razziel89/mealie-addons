@@ -64,7 +64,7 @@ func main() {
 	case "embed":
 		log.Println("image tags will be embedded into resulting documents")
 		retrievalEndpoint := fmt.Sprintf(
-			"http://127.0.0.1:%d/image-retrieval/",
+			"http://127.0.0.1:%d/media/",
 			cfg.listenPort,
 		)
 		htmlHook = func(html []byte) ([]byte, error) {
@@ -83,6 +83,7 @@ func main() {
 		cfg.listenInterface,
 		time.Duration(cfg.timeoutSecs)*time.Second,
 		mealie.getRecipes,
+		mealie.getMedia,
 		[]responseGenerator{
 			&markdownGenerator{url: cfg.mealieBaseURL, pandoc: &pandoc},
 			&epubGenerator{url: cfg.mealieBaseURL, pandoc: &pandoc},

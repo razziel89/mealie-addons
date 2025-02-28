@@ -126,7 +126,10 @@ type slug struct {
 	Slug string `json:"slug"`
 }
 
-type getRecipesFn func(ctx context.Context, queryParams map[string][]string) ([]recipe, error)
+type (
+	getRecipesFn func(ctx context.Context, queryParams map[string][]string) ([]recipe, error)
+	getMediaFn   func(ctx context.Context, uuid string, filename string) (io.ReadCloser, error)
+)
 
 type mealie struct {
 	url     string
@@ -264,6 +267,28 @@ func (m mealie) getRecipes(ctx context.Context, queryParams map[string][]string)
 	wg.Wait()
 
 	return recipes, errors.Join(errs...)
+}
+
+func (m mealie) getMedia(
+	ctx context.Context,
+	uuid string,
+	filename string,
+) (io.ReadCloser, error) {
+	log.Printf("retrieving media %s/%s", uuid, filename)
+
+	url := fmt.Sprintf("%s/api/media/recipes/%s/%s", m.url, uuid, filename)
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	m.addAuth(req)
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	return resp.Body, nil
 }
 
 func (m mealie) addAuth(req *http.Request) {
