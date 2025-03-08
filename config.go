@@ -20,6 +20,8 @@ type config struct {
 	pandocFlags        []string
 	pandocFontsDir     string
 	imageAction        string
+	htmlAttrsMod       map[string]map[string]string
+	htmlAttrsRm        map[string]map[string]string
 }
 
 func initConfig() (cfg config, err error) {
@@ -103,6 +105,18 @@ func initConfig() (cfg config, err error) {
 		return
 	}
 
+	htmlAttrsMod, parseErr := parseHtmlAttrs(os.Getenv("MA_HTML_ATTRS_MOD"))
+	if parseErr != nil {
+		err = parseErr
+		return
+	}
+
+	htmlAttrsRm, parseErr := parseHtmlAttrs(os.Getenv("MA_HTML_ATTRS_RM"))
+	if parseErr != nil {
+		err = parseErr
+		return
+	}
+
 	cfg = config{
 		mealieRetrievalURL: os.Getenv("MEALIE_RETRIEVAL_URL"),
 		mealieBaseURL:      mealieBaseURL,
@@ -115,6 +129,8 @@ func initConfig() (cfg config, err error) {
 		pandocFlags:        pandocFlags,
 		pandocFontsDir:     pandocFontsDir,
 		imageAction:        imageAction,
+		htmlAttrsMod:       htmlAttrsMod,
+		htmlAttrsRm:        htmlAttrsRm,
 	}
 	return
 }

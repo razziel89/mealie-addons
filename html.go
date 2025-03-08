@@ -126,3 +126,49 @@ func redirectImgSources(htmlInput []byte, prefix string, newPrefix string) ([]by
 
 	return buf.Bytes(), nil
 }
+
+func parseHtmlAttrs(htmlInput string) (map[string]map[string]string, error) {
+	result := map[string]map[string]string{}
+	if htmlInput == "" {
+		return result, nil
+	}
+
+	root, err := html.Parse(strings.NewReader(htmlInput))
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse HTML input: %s", err.Error())
+	}
+
+	nodesAtCurrentLevel := []*html.Node{root}
+	nodesAtNextLevel := []*html.Node{}
+
+	for len(nodesAtCurrentLevel) != 0 {
+		for _, current := range nodesAtCurrentLevel {
+			child := current.FirstChild
+			for child != nil {
+				nodesAtNextLevel = append(nodesAtNextLevel, child)
+				if child.Type == html.ElementNode {
+					elementResult, found := result[child.Data]
+					if !found {
+						elementResult = map[string]string{}
+					}
+					for _, attr := range child.Attr {
+						elementResult[attr.Key] = attr.Val
+					}
+					result[child.Data] = elementResult
+				}
+				child = child.NextSibling
+			}
+		}
+		nodesAtCurrentLevel = nodesAtNextLevel
+		nodesAtNextLevel = []*html.Node{}
+	}
+
+	numElems := len(result)
+	numAttrs := 0
+	for _, elementResult := range result {
+		numAttrs += len(elementResult)
+	}
+
+	log.Printf("parsed html into %d elements and %d attributes", numElems, numAttrs)
+	return result, nil
+}
