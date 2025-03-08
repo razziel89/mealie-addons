@@ -129,6 +129,11 @@ func updateHtmlAttrs(
 							attr := &child.Attr[idx]
 							if newVal, found := mod[attr.Key]; found {
 								attr.Val = newVal
+								log.Printf(
+									"setting html attribute for %s: %s=%s (was %s)",
+									child.Data, attr.Key, newVal, attr.Val,
+								)
+								numMod++
 							}
 						}
 					}
@@ -138,6 +143,12 @@ func updateHtmlAttrs(
 						for _, attr := range child.Attr {
 							if _, found := rm[attr.Key]; !found {
 								newAttrs = append(newAttrs, attr)
+							} else {
+								numRm++
+								log.Printf(
+									"removing html attribute for %s: %s (was %s)",
+									child.Data, attr.Key, attr.Val,
+								)
 							}
 						}
 						child.Attr = newAttrs
