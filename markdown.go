@@ -169,7 +169,7 @@ Total time: %s
 		result = append(
 			result,
 			fmt.Sprintf(
-				"<img src=\"/api/media/recipes/%s/images/original_webp.jpeg\" alt=\"%s\" width=\"150\">\n",
+				"<img src=\"/api/media/recipes/%s/images/original.webp.jpeg\" alt=\"%s\" height=\"150\">\n",
 				recipe.ID,
 				strings.ReplaceAll(recipe.Name, `"`, " "),
 			),

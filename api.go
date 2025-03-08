@@ -9,6 +9,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -116,48 +117,46 @@ func setUpAPI(
 		})
 	}
 
-	for _, what := range []string{"assets", "images"} {
-		what := what
-		log.Printf("setting up endpoint for %s retrieval", what)
-		router.GET(fmt.Sprintf("/media/:uuid/%s/:filename", what), func(c *gin.Context) {
-			ctx, cancel := context.WithTimeout(c.Request.Context(), timeout)
-			defer cancel()
+	log.Printf("setting up endpoint for media retrieval")
+	router.GET("/media/:uuid/:what/:filename", func(c *gin.Context) {
+		ctx, cancel := context.WithTimeout(c.Request.Context(), timeout)
+		defer cancel()
 
-			uuid := c.Param("uuid")
-			filename := c.Param("filename")
-			if what == "images" && filename == "original_webp.jpeg" {
-				filename = "original.webp"
-			}
+		uuid := c.Param("uuid")
+		what := c.Param("what")
+		filename := c.Param("filename")
+		if strings.HasSuffix(filename, ".webp.jpeg") {
+			filename = strings.TrimSuffix(filename, ".jpeg")
+		}
 
-			media, err := getMedia(ctx, uuid, filename, what)
+		media, err := getMedia(ctx, uuid, filename, what)
 
-			if what == "images" && media.mime == "image/webp" {
-				log.Printf("converting webp to jpeg: %s/%s", uuid, filename)
-				// LaTeX doesn't understand webp images. Thus, we have to decode them and re-encode
-				// them.
-				var image image.Image
-				image, err = webp.Decode(bytes.NewReader(media.content))
-				buf := bytes.Buffer{}
-				if err == nil {
-					err = jpeg.Encode(&buf, image, nil)
-				}
-				media.content = buf.Bytes()
-				media.mime = "image/jpeg"
-			}
-
+		if media.mime == "image/webp" {
+			log.Printf("converting webp to jpeg: %s/%s", uuid, filename)
+			// LaTeX doesn't understand webp images. Thus, we have to decode them and re-encode
+			// them.
+			var image image.Image
+			image, err = webp.Decode(bytes.NewReader(media.content))
+			buf := bytes.Buffer{}
 			if err == nil {
-				c.Writer.Header().Set("Content-Type", media.mime)
-				_, err = io.Copy(c.Writer, bytes.NewReader(media.content))
+				err = jpeg.Encode(&buf, image, nil)
 			}
-			if err == nil {
-				c.Status(http.StatusOK)
-			} else {
-				msg := fmt.Sprintf("unexpected error %s", err.Error())
-				log.Println(msg)
-				c.String(http.StatusInternalServerError, msg)
-			}
-		})
-	}
+			media.content = buf.Bytes()
+			media.mime = "image/jpeg"
+		}
+
+		if err == nil {
+			c.Writer.Header().Set("Content-Type", media.mime)
+			_, err = io.Copy(c.Writer, bytes.NewReader(media.content))
+		}
+		if err == nil {
+			c.Status(http.StatusOK)
+		} else {
+			msg := fmt.Sprintf("unexpected error %s", err.Error())
+			log.Println(msg)
+			c.String(http.StatusInternalServerError, msg)
+		}
+	})
 
 	server := &http.Server{
 		Addr:              iface,
