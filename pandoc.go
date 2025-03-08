@@ -12,6 +12,8 @@ import (
 	"slices"
 	"strings"
 	"time"
+
+	"golang.org/x/net/html"
 )
 
 var defaultPandocAlwaysArgs = []string{
@@ -62,7 +64,7 @@ type pandoc struct {
 	options       []string
 	mainFont      string
 	fallbackFonts []string
-	htmlHook      func([]byte) ([]byte, error)
+	htmlHooks     []func(*html.Node) (*html.Node, error)
 }
 
 func (p *pandoc) loadFonts(dir string) error {
@@ -153,7 +155,7 @@ func (p *pandoc) run(
 	markdownInput string,
 	toFormat string,
 	title string,
-	filetypeHook func([]byte) ([]byte, error),
+	filetypeHook func(*html.Node) (*html.Node, error),
 ) ([]byte, error) {
 	alwaysArgs := append([]string{}, defaultPandocAlwaysArgs...)
 	alwaysArgs = append(alwaysArgs, "--metadata", "title="+title, "--metadata", "pagetitle="+title)
@@ -175,7 +177,7 @@ func (p *pandoc) run(
 	firstArgs = append(firstArgs, defaultPandocFirstArgs...)
 	firstArgs = append(firstArgs, "--metadata", "title="+title, "--metadata", "pagetitle="+title)
 
-	html, errMsg, err := runExe(ctx, "pandoc", firstArgs, nil, []byte(markdownInput))
+	htmlIntermediate, errMsg, err := runExe(ctx, "pandoc", firstArgs, nil, []byte(markdownInput))
 	if errMsg != "" {
 		log.Println("stderr when running pandoc:", errMsg)
 	}
@@ -183,18 +185,28 @@ func (p *pandoc) run(
 		return nil, err
 	}
 
-	if p.htmlHook != nil {
-		html, err = p.htmlHook(html)
+	root, err := html.Parse(bytes.NewReader(htmlIntermediate))
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse generated html: %s", err.Error())
+	}
+	for idx, hook := range p.htmlHooks {
+		root, err = hook(root)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to run %d'nth html hook: %s", idx+1, err.Error())
 		}
 	}
 	if filetypeHook != nil {
-		html, err = filetypeHook(html)
+		root, err = filetypeHook(root)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to run filetype html hook: %s", err.Error())
 		}
 	}
+	buf := bytes.Buffer{}
+	err = html.Render(&buf, root)
+	if err != nil {
+		return nil, fmt.Errorf("failed to render HTML output: %s", err.Error())
+	}
+	htmlIntermediate = buf.Bytes()
 
 	// Convert again, but to the desired format.
 	lastArgs := append([]string{}, alwaysUserArgs...)
@@ -213,7 +225,7 @@ func (p *pandoc) run(
 	lastArgs = append(lastArgs, defaultPandocLastArgs...)
 	lastArgs = append(lastArgs, "--to", toFormat)
 
-	converted, errMsg, err := runExe(ctx, "pandoc", lastArgs, nil, html)
+	converted, errMsg, err := runExe(ctx, "pandoc", lastArgs, nil, htmlIntermediate)
 	if errMsg != "" {
 		log.Println("stderr when running pandoc:", errMsg)
 	}

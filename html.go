@@ -2,7 +2,6 @@
 package main
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"log"
@@ -37,12 +36,7 @@ func (g *htmlGenerator) response(
 	return g.pandoc.run(ctx, buildMarkdown(recipes, g.url), "html", buildTitle(timestamp), nil)
 }
 
-func removeAllHtmlElements(htmlInput []byte, element string) ([]byte, error) {
-	root, err := html.Parse(bytes.NewReader(htmlInput))
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse HTML input: %s", err.Error())
-	}
-
+func removeAllHtmlElements(root *html.Node, element string) (*html.Node, error) {
 	nodesAtCurrentLevel := []*html.Node{root}
 	nodesAtNextLevel := []*html.Node{}
 	numRemoved := 0
@@ -65,23 +59,13 @@ func removeAllHtmlElements(htmlInput []byte, element string) ([]byte, error) {
 		nodesAtNextLevel = []*html.Node{}
 	}
 
-	buf := bytes.Buffer{}
-	err = html.Render(&buf, root)
-	if err != nil {
-		return nil, fmt.Errorf("failed to render HTML output: %s", err.Error())
-	}
 	log.Printf("removed %d nodes of type %s", numRemoved, element)
-
-	return buf.Bytes(), nil
+	return root, nil
 }
 
-func redirectImgSources(htmlInput []byte, prefix string, newPrefix string) ([]byte, error) {
+func redirectImgSources(root *html.Node, prefix string, newPrefix string) (*html.Node, error) {
 	element := "img"
 	key := "src"
-	root, err := html.Parse(bytes.NewReader(htmlInput))
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse HTML input: %s", err.Error())
-	}
 
 	nodesAtCurrentLevel := []*html.Node{root}
 	nodesAtNextLevel := []*html.Node{}
@@ -116,15 +100,10 @@ func redirectImgSources(htmlInput []byte, prefix string, newPrefix string) ([]by
 		nodesAtNextLevel = []*html.Node{}
 	}
 
-	buf := bytes.Buffer{}
-	err = html.Render(&buf, root)
-	if err != nil {
-		return nil, fmt.Errorf("failed to render HTML output: %s", err.Error())
-	}
 	log.Printf("redirected %d nodes of type %s", numReplaced, element)
 	log.Printf("kept %d nodes of type %s", numReplaced, element)
 
-	return buf.Bytes(), nil
+	return root, nil
 }
 
 func parseHtmlAttrs(htmlInput string) (map[string]map[string]string, error) {

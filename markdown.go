@@ -9,6 +9,8 @@ import (
 	"sort"
 	"strings"
 	"time"
+
+	"golang.org/x/net/html"
 )
 
 type markdownGenerator struct {
@@ -33,8 +35,8 @@ func (g *markdownGenerator) response(
 	recipes []recipe,
 	timestamp time.Time,
 ) ([]byte, error) {
-	htmlHook := func(html []byte) ([]byte, error) {
-		return removeAllHtmlElements(html, "img")
+	htmlHook := func(htmlInput *html.Node) (*html.Node, error) {
+		return removeAllHtmlElements(htmlInput, "img")
 	}
 	return g.pandoc.run(
 		ctx,

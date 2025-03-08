@@ -8,6 +8,8 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+
+	"golang.org/x/net/html"
 )
 
 // Initialise everything.
@@ -53,26 +55,28 @@ func main() {
 
 	cfg.mealieBaseURL = cfg.mealieBaseURL + "/g/" + group
 
-	var htmlHook func([]byte) ([]byte, error)
+	htmlHooks := []func(*html.Node) (*html.Node, error){}
 	switch cfg.imageAction {
 	case "ignore": // No-op.
 	case "remove":
 		log.Println("image tags will be removed from resulting documents")
-		htmlHook = func(html []byte) ([]byte, error) {
-			return removeAllHtmlElements(html, "img")
+		hook := func(htmlInput *html.Node) (*html.Node, error) {
+			return removeAllHtmlElements(htmlInput, "img")
 		}
+		htmlHooks = append(htmlHooks, hook)
 	case "embed":
 		log.Println("image tags will be embedded into resulting documents")
 		retrievalEndpoint := fmt.Sprintf(
 			"http://127.0.0.1:%d/media/",
 			cfg.listenPort,
 		)
-		htmlHook = func(html []byte) ([]byte, error) {
-			return redirectImgSources(html, "/api/media/recipes/", retrievalEndpoint)
+		hook := func(htmlInput *html.Node) (*html.Node, error) {
+			return redirectImgSources(htmlInput, "/api/media/recipes/", retrievalEndpoint)
 		}
+		htmlHooks = append(htmlHooks, hook)
 	}
 
-	pandoc := pandoc{options: cfg.pandocFlags, htmlHook: htmlHook}
+	pandoc := pandoc{options: cfg.pandocFlags, htmlHooks: htmlHooks}
 	err = pandoc.loadFonts(cfg.pandocFontsDir)
 	if err != nil {
 		log.Printf("failed to load fonts, skipping: %s", err.Error())
