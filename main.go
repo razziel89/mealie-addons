@@ -76,6 +76,11 @@ func main() {
 		htmlHooks = append(htmlHooks, hook)
 	}
 
+	updateAttrsHook := func(htmlInput *html.Node) (*html.Node, error) {
+		return updateHtmlAttrs(htmlInput, cfg.htmlAttrsMod, cfg.htmlAttrsRm)
+	}
+	htmlHooks = append(htmlHooks, updateAttrsHook)
+
 	pandoc := pandoc{options: cfg.pandocFlags, htmlHooks: htmlHooks}
 	err = pandoc.loadFonts(cfg.pandocFontsDir)
 	if err != nil {

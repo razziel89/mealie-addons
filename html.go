@@ -106,6 +106,56 @@ func redirectImgSources(root *html.Node, prefix string, newPrefix string) (*html
 	return root, nil
 }
 
+func updateHtmlAttrs(
+	root *html.Node,
+	mapMod map[string]map[string]string,
+	mapRm map[string]map[string]string,
+) (*html.Node, error) {
+	nodesAtCurrentLevel := []*html.Node{root}
+	nodesAtNextLevel := []*html.Node{}
+	numMod := 0
+	numRm := 0
+
+	for len(nodesAtCurrentLevel) != 0 {
+		for _, current := range nodesAtCurrentLevel {
+			child := current.FirstChild
+			for child != nil {
+				next := child.NextSibling
+				nodesAtNextLevel = append(nodesAtNextLevel, child)
+				if child.Type == html.ElementNode {
+					mod, found := mapMod[child.Data]
+					if found {
+						for idx := range child.Attr {
+							attr := &child.Attr[idx]
+							if newVal, found := mod[attr.Key]; found {
+								attr.Val = newVal
+							}
+						}
+					}
+					rm, found := mapRm[child.Data]
+					if found {
+						newAttrs := make([]html.Attribute, 0, len(child.Attr))
+						for _, attr := range child.Attr {
+							if _, found := rm[attr.Key]; !found {
+								newAttrs = append(newAttrs, attr)
+							}
+						}
+						child.Attr = newAttrs
+					}
+				}
+				child = next
+			}
+		}
+		nodesAtCurrentLevel = nodesAtNextLevel
+		nodesAtNextLevel = []*html.Node{}
+	}
+
+	log.Printf("modified %d html attributes", numMod)
+	log.Printf("removed %d html attributes", numRm)
+
+	return root, nil
+}
+
 func parseHtmlAttrs(htmlInput string) (map[string]map[string]string, error) {
 	result := map[string]map[string]string{}
 	if htmlInput == "" {
