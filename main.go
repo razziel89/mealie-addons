@@ -26,6 +26,12 @@ func main() {
 		log.Fatalf("missing executable: %s", err.Error())
 	}
 
+	{
+		copyCfg := cfg
+		copyCfg.mealieToken = "***"
+		log.Printf("using config: %+v", copyCfg)
+	}
+
 	var limiter chan bool = nil
 	if cfg.retrievalLimit > 0 {
 		log.Printf("retrieving at most %d recipes in parallel", cfg.retrievalLimit)
