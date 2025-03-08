@@ -125,15 +125,26 @@ func updateHtmlAttrs(
 				if child.Type == html.ElementNode {
 					mod, found := mapMod[child.Data]
 					if found {
+						didModify := map[string]bool{}
 						for idx := range child.Attr {
 							attr := &child.Attr[idx]
 							if newVal, found := mod[attr.Key]; found {
+								didModify[attr.Key] = true
 								attr.Val = newVal
 								log.Printf(
 									"setting html attribute for %s: %s=%s (was %s)",
 									child.Data, attr.Key, newVal, attr.Val,
 								)
 								numMod++
+							}
+						}
+						for key, val := range mod {
+							if _, found := didModify[key]; !found {
+								log.Printf(
+									"adding html attribute for %s: %s=%s",
+									child.Data, key, val,
+								)
+								child.Attr = append(child.Attr, html.Attribute{Key: key, Val: val})
 							}
 						}
 					}
@@ -207,6 +218,17 @@ func parseHtmlAttrs(htmlInput string) (map[string]map[string]string, error) {
 	numAttrs := 0
 	for _, elementResult := range result {
 		numAttrs += len(elementResult)
+	}
+
+	keys := []string{}
+	for key := range result {
+		keys = append(keys, key)
+	}
+
+	for _, key := range keys {
+		if len(result[key]) == 0 {
+			delete(result, key)
+		}
 	}
 
 	log.Printf("parsed html into %d elements and %d attributes", numElems, numAttrs)
