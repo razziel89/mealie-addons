@@ -106,6 +106,44 @@ func redirectImgSources(root *html.Node, prefix string, newPrefix string) (*html
 	return root, nil
 }
 
+func ensureWebpImagesCanBeReplaced(root *html.Node) (*html.Node, error) {
+	element := "img"
+	key := "src"
+
+	nodesAtCurrentLevel := []*html.Node{root}
+	nodesAtNextLevel := []*html.Node{}
+	numReplaced := 0
+
+	for len(nodesAtCurrentLevel) != 0 {
+		for _, current := range nodesAtCurrentLevel {
+			child := current.FirstChild
+			for child != nil {
+				next := child.NextSibling
+				nodesAtNextLevel = append(nodesAtNextLevel, child)
+				if child.Type == html.ElementNode && child.Data == element {
+					replaced := false
+					for idx := range child.Attr {
+						attr := &child.Attr[idx]
+						if attr.Key == key && strings.HasSuffix(attr.Val, ".webp") {
+							attr.Val += ".jpeg"
+							replaced = true
+						}
+					}
+					if replaced {
+						numReplaced += 1
+					}
+				}
+				child = next
+			}
+		}
+		nodesAtCurrentLevel = nodesAtNextLevel
+		nodesAtNextLevel = []*html.Node{}
+	}
+
+	log.Printf("redirected %d webp images", numReplaced)
+	return root, nil
+}
+
 func updateHtmlAttrs(
 	root *html.Node,
 	mapMod map[string]map[string]string,

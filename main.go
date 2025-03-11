@@ -2,7 +2,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -72,12 +71,13 @@ func main() {
 		htmlHooks = append(htmlHooks, hook)
 	case "embed":
 		log.Println("image tags will be embedded into resulting documents")
-		retrievalEndpoint := fmt.Sprintf(
-			"http://127.0.0.1:%d/media/",
-			cfg.listenPort,
-		)
+		retrievalEndpoint := cfg.selfURL + "/media/"
 		hook := func(htmlInput *html.Node) (*html.Node, error) {
 			return redirectImgSources(htmlInput, "/api/media/recipes/", retrievalEndpoint)
+		}
+		htmlHooks = append(htmlHooks, hook)
+		hook = func(htmlInput *html.Node) (*html.Node, error) {
+			return ensureWebpImagesCanBeReplaced(htmlInput)
 		}
 		htmlHooks = append(htmlHooks, hook)
 	}

@@ -12,8 +12,8 @@ type config struct {
 	mealieRetrievalURL string
 	mealieBaseURL      string
 	mealieToken        string
+	selfURL            string
 	listenInterface    string
-	listenPort         int
 	retrievalLimit     int
 	timeoutSecs        int
 	startupGraceSecs   int
@@ -117,12 +117,17 @@ func initConfig() (cfg config, err error) {
 		return
 	}
 
+	selfURL := os.Getenv("MA_SELF_URL")
+	if selfURL == "" {
+		selfURL = fmt.Sprintf("http://127.0.0.1:%d", listenPort)
+	}
+
 	cfg = config{
 		mealieRetrievalURL: os.Getenv("MEALIE_RETRIEVAL_URL"),
 		mealieBaseURL:      mealieBaseURL,
 		mealieToken:        token,
+		selfURL:            selfURL,
 		listenInterface:    interfaceEnv,
-		listenPort:         listenPort,
 		retrievalLimit:     retrievalLimit,
 		timeoutSecs:        timeoutSecs,
 		startupGraceSecs:   startupGraceSecs,

@@ -1,10 +1,12 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"image/jpeg"
 	"io"
 	"log"
 	"net/http"
@@ -12,6 +14,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"golang.org/x/image/webp"
 )
 
 func collapseWhitespace(s string) string {
@@ -284,11 +288,18 @@ func (m mealie) getMedia(
 ) (mediaDownload, error) {
 	log.Printf("retrieving media %s/%s", uuid, filename)
 
+	var extension string
+	filenameParts := strings.Split(filename, ".")
+	if len(filenameParts) >= 1 {
+		extension = strings.ToLower(filenameParts[len(filenameParts)-1])
+	}
+
 	url := fmt.Sprintf("%s/api/media/recipes/%s/%s/%s", m.url, uuid, middle, filename)
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return mediaDownload{}, err
 	}
+	req.Header.Set("Accept", "image/*")
 
 	m.addAuth(req)
 
@@ -314,8 +325,25 @@ func (m mealie) getMedia(
 		content: content,
 		mime:    resp.Header.Get("Content-Type"),
 	}
-	log.Printf("retrieved media: %s", data.mime)
+	var decodeErr error
+	if !strings.HasPrefix(data.mime, "image/") {
+		log.Println("mealie claims we received no image but we requested one, checking")
+		switch extension {
+		case "jpg":
+			_, decodeErr = jpeg.Decode(bytes.NewReader(data.content))
+			extension = "jpeg"
+		case "jpeg":
+			_, decodeErr = jpeg.Decode(bytes.NewReader(data.content))
+		case "webp":
+			_, decodeErr = webp.Decode(bytes.NewReader(data.content))
+		}
+	}
+	data.mime = "image/" + extension
+	if decodeErr != nil {
+		return data, fmt.Errorf("failed to verify download as %s", data.mime)
+	}
 
+	log.Printf("successfully retrieved media: %s", data.mime)
 	return data, nil
 }
 
