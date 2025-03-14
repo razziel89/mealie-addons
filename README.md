@@ -250,6 +250,12 @@ services:
             PANDOC_FONTS_DIR: .
             PANDOC_FLAGS: |-
                 --epub-title-page=false
+            MA_IMAGE_ACTION: embed
+            MA_HTML_ATTRS_MOD: |
+              <img width="15%">
+            MA_HTML_ATTRS_RM: |
+              <img height="">
+            MA_SELF_URL: "http://127.0.0.1:9926"
         secrets:
             - MEALIE_TOKEN
 
@@ -304,6 +310,12 @@ services:
             PANDOC_FONTS_DIR: .
             PANDOC_FLAGS: |-
                 --epub-title-page=false
+            MA_IMAGE_ACTION: embed
+            MA_HTML_ATTRS_MOD: |
+              <img width="15%">
+            MA_HTML_ATTRS_RM: |
+              <img height="">
+            MA_SELF_URL: "http://127.0.0.1:9926"
         secrets:
             - MEALIE_TOKEN
 
@@ -339,6 +351,10 @@ Environment=MA_TIMEOUT_SECS=<TODO>
 # The following environment variables are optional.
 Environment=PANDOC_FONTS_DIR=<TODO>
 Environment=PANDOC_FLAGS=<TODO>
+Environment=MA_IMAGE_ACTION=<TODO>
+Environment=MA_HTML_ATTRS_MOD=<TODO>
+Environment=MA_HTML_ATTRS_RM=<TODO>
+Environment=MA_SELF_URL=<TODO>
 
 # A local user account that this service shall run as. Do not use root.
 User=<TODO>
@@ -486,6 +502,70 @@ The following explains all [environment variables] understood by
         PANDOC_FLAGS: |-
             --epub-title-page=false
     ```
+
+- `MA_IMAGE_ACTION`:
+  How to handle images in recipes.
+  This affects both images that are part of individual instructions and the
+  title images associated with recipes.
+  This environment variable is optional and defaults to `remove`.
+  The following are possible values:
+    - `remove`:
+      Images are removed before the final document is being generated.
+      Images are always removed from markdown documents.
+    - `embed`:
+      Images are embedded in document types that support it.
+      Currently, embedding images is supported in HTML, EPUB, and PDF documents.
+      Note that not all images types are supported.
+      PNGs, JPEGs, and WEBP images are known to work.
+    - `ignore`:
+      Keep links to images as they are.
+      For HTML output, this will result in links to images on the mealie
+      instance.
+      For EPUB and PDF documents, this will result in placeholders where images
+      should be.
+      Choose this option only in case of problems with both of the other
+      possible values.
+
+- `MA_HTML_ATTRS_MOD`:
+  Make modifications to the document at the intermediate HTML stage.
+  This makes it relatively simple to modify the look and feel of the document to
+  a limited extent.
+  This optional environment variable defaults to the empty string.
+  If not empty, it must contain a valid HTML string.
+  The HTML attributes specified in the HTML string will override the same
+  attribute on every matching element in the HTML document.
+  If an attribute is not defined on an element, it will be added.
+
+  - Example of setting the width of every image to 150 pixels:
+    ```yaml
+    MA_HTML_ATTRS_MOD: |
+      <img width="150">
+    ```
+
+- `MA_HTML_ATTRS_RM`:
+  This environment variable is like `MA_HTML_ATTRS_MOD` but it causes the
+  removal of HTML attributes.
+  The HTML attributes specified in the HTML string will cause the removal of the
+  same attribute on every matching element in the HTML document.
+  The actual values associated with the attributes do not matter.
+  It is recommended simply to set them to `""`.
+
+  - Example of removing the height attribute of every image:
+    ```yaml
+    MA_HTML_ATTRS_RM: |
+      <img width="">
+    ```
+
+- `MA_SELF_URL`:
+  A URL where [pandoc] can reach `mealie-addons`.
+  This optional environment variable defaults to `http://127.0.0.1:PORT`.
+  Here, `PORT` is the port portion of `MA_LISTEN_INTERFACE`.
+  It should not be necessary to set this environment variable unless the network
+  configuration is non-standard.
+  Such a non-standard configuration includes but is not limited to the use of:
+    - a proxy server,
+    - a virtual private network, or
+    - special routing tables.
 
 # How To Contribute
 
