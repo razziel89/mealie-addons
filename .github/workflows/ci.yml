@@ -34,7 +34,7 @@ jobs:
           # System.
           sudo apt-get install make curl wget
           # Go.
-          curl -sSfL "${RAW_URL}/${LINT}" | sudo sh -s -- -b "${TARGET}" v1.63.4
+          curl -sSfL "${RAW_URL}/${LINT}" | sudo sh -s -- -b "${TARGET}" v1.64.7
           # Custom.
           sudo wget -O "${TARGET}/mdslw" "${MDSLW_URL}/${MDSLW_BIN}"
           sudo chmod +x "${TARGET}/mdslw"
