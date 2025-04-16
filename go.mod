@@ -7,7 +7,7 @@ toolchain go1.24.0
 require (
 	github.com/gin-gonic/gin v1.10.0
 	golang.org/x/image v0.25.0
-	golang.org/x/net v0.37.0
+	golang.org/x/net v0.38.0
 )
 
 require (
