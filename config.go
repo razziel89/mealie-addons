@@ -2,6 +2,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"strconv"
@@ -22,6 +23,7 @@ type config struct {
 	imageAction        string
 	htmlAttrsMod       map[string]map[string]string
 	htmlAttrsRm        map[string]map[string]string
+	queryAssignments   queryAssignments
 }
 
 func initConfig() (cfg config, err error) {
@@ -122,6 +124,19 @@ func initConfig() (cfg config, err error) {
 		selfURL = fmt.Sprintf("http://127.0.0.1:%d", listenPort)
 	}
 
+	var queryAssignments queryAssignments
+	queryAssignmentsStr := os.Getenv("MA_QUERY_ASSIGNMENTS")
+	if queryAssignmentsStr != "" {
+		parseErr := json.Unmarshal([]byte(queryAssignmentsStr), &queryAssignments)
+		if parseErr != nil {
+			err = fmt.Errorf(
+				"failed to parse MA_NUM_QUERY_ASSIGNMENTS as the expected JSON: %s",
+				parseErr.Error(),
+			)
+			return
+		}
+	}
+
 	cfg = config{
 		mealieRetrievalURL: os.Getenv("MEALIE_RETRIEVAL_URL"),
 		mealieBaseURL:      mealieBaseURL,
@@ -136,6 +151,7 @@ func initConfig() (cfg config, err error) {
 		imageAction:        imageAction,
 		htmlAttrsMod:       htmlAttrsMod,
 		htmlAttrsRm:        htmlAttrsRm,
+		queryAssignments:   queryAssignments,
 	}
 	return
 }
