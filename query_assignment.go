@@ -207,7 +207,9 @@ func launchAssignmentLoop(assignments queryAssignments, mealie mealie) (chan<- b
 								indexedSlice(tagsMap, assignment.Tags.Unset),
 							)
 							if categoriesChanged || tagsChanged {
+								ctx, cancel = context.WithTimeout(background, timeout)
 								err = mealie.setOrganisers(ctx, recipe)
+								cancel()
 								if err != nil {
 									log.Printf("failed to update organisers: %s", err.Error())
 								}

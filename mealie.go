@@ -467,16 +467,17 @@ func (m *mealie) setOrganisers(ctx context.Context, recipe recipe) error {
 	if err != nil {
 		return fmt.Errorf("failed to construct request")
 	}
+	req.Header.Add("Content-Type", "application/json")
 
 	m.addAuth(req)
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("failed to update organisers")
+		return fmt.Errorf("failed to execute request: %s", err.Error())
 	}
 	body, err = io.ReadAll(resp.Body)
 	if err != nil {
-		return fmt.Errorf("failed to read response body")
+		return fmt.Errorf("failed to read response body: %s", err.Error())
 	}
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("unexpected status code %d: %s", resp.StatusCode, string(body))
