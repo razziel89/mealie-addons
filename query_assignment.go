@@ -13,12 +13,14 @@ type queryAssignment struct {
 
 type queryAssignments struct {
 	RepeatSecs  int               `json:"repeat-secs"`
+	TimeoutSecs int               `json:"timeout-secs"`
 	Assignments []queryAssignment `json:"assignments"`
 }
 
 // // An example JSON config follows:
 // {
 //     "repeat-secs": 30,
+//     "timeout-secs": 30,
 //     "assignments": [
 //         {
 //             "query": {
