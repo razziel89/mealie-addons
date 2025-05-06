@@ -31,8 +31,8 @@ type recipe struct {
 	TotalTime    string        `json:"totalTime"`
 	Description  string        `json:"description"`
 	OrgURL       string        `json:"orgURL"`
-	Categories   []category    `json:"recipeCategory"`
-	Tags         []tag         `json:"tags"`
+	Categories   []organiser   `json:"recipeCategory"`
+	Tags         []organiser   `json:"tags"`
 	Instructions []instruction `json:"recipeInstructions"`
 	Ingredients  []ingredient  `json:"recipeIngredient"`
 	Comments     []comment     `json:"comments"`
@@ -79,12 +79,14 @@ func (i *ingredient) normalise() {
 	i.Text = collapseWhitespace(i.Text)
 }
 
-type category struct {
-	Text string `json:"name"`
+type organiser struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+	Slug string `json:"slug"`
 }
 
-func (c *category) normalise() {
-	c.Text = collapseWhitespace(c.Text)
+func (o *organiser) normalise() {
+	o.Name = collapseWhitespace(o.Name)
 }
 
 type comment struct {
@@ -103,14 +105,6 @@ type user struct {
 
 func (u *user) normalise() {
 	u.Name = collapseWhitespace(u.Name)
-}
-
-type tag struct {
-	Text string `json:"name"`
-}
-
-func (t *tag) normalise() {
-	t.Text = collapseWhitespace(t.Text)
 }
 
 type slugsResponse struct {
@@ -397,13 +391,6 @@ type organisersResponse struct {
 	Pages int         `json:"total_pages"`
 }
 
-type organiser struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
-	Slug string `json:"slug"`
-	kind string
-}
-
 func (m *mealie) getOrganisers(ctx context.Context, kind string) ([]organiser, error) {
 	if kind != "categories" && kind != "tags" {
 		return nil, fmt.Errorf("Can only get categories or tags for now but not '%s'.", kind)
@@ -451,10 +438,6 @@ func (m *mealie) getOrganisers(ctx context.Context, kind string) ([]organiser, e
 		log.Printf("retrieved %d slugs from page %d", len(slugsResponse.Items), page)
 
 		page++
-	}
-
-	for idx := range slugs {
-		slugs[idx].kind = kind
 	}
 
 	log.Printf("retrieved %d slugs in total", len(slugs))

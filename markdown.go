@@ -57,10 +57,10 @@ func buildMarkdown(recipes []recipe, url string) string {
 	categories := map[string]bool{}
 	for _, recipe := range recipes {
 		for _, tag := range recipe.Tags {
-			tags[tag.Text] = true
+			tags[tag.Name] = true
 		}
 		for _, category := range recipe.Categories {
-			categories[category.Text] = true
+			categories[category.Name] = true
 		}
 	}
 	log.Printf("there are %d tags and %d categories overall", len(tags), len(categories))
@@ -86,7 +86,7 @@ func buildMarkdown(recipes []recipe, url string) string {
 	for _, recipe := range recipes {
 		tags := make([]string, 0, len(recipe.Tags))
 		for _, tag := range recipe.Tags {
-			tags = append(tags, tag.Text)
+			tags = append(tags, tag.Name)
 		}
 		tagsPerRecipe[recipe.ID] = tags
 	}
@@ -95,7 +95,7 @@ func buildMarkdown(recipes []recipe, url string) string {
 	for _, recipe := range recipes {
 		categories := make([]string, 0, len(recipe.Categories))
 		for _, category := range recipe.Categories {
-			categories = append(categories, category.Text)
+			categories = append(categories, category.Name)
 		}
 		categoriesPerRecipe[recipe.ID] = categories
 	}
@@ -189,7 +189,7 @@ Total time: %s
 		for _, category := range recipe.Categories {
 			categories = append(
 				categories,
-				fmt.Sprintf("[%s](#category-%s)", category.Text, slugify(category.Text)),
+				fmt.Sprintf("[%s](#category-%s)", category.Name, slugify(category.Name)),
 			)
 		}
 		categoriesStr := fmt.Sprintf("- **Catgories**: %s", strings.Join(categories, ", "))
@@ -200,7 +200,7 @@ Total time: %s
 		tags := make([]string, 0, len(recipe.Tags))
 		for _, tag := range recipe.Tags {
 			tags = append(tags,
-				fmt.Sprintf("[%s](#tag-%s)", tag.Text, slugify(tag.Text)),
+				fmt.Sprintf("[%s](#tag-%s)", tag.Name, slugify(tag.Name)),
 			)
 		}
 		tagsStr := fmt.Sprintf("- **Tags**: %s", strings.Join(tags, ", "))
