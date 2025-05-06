@@ -443,3 +443,45 @@ func (m *mealie) getOrganisers(ctx context.Context, kind string) ([]organiser, e
 	log.Printf("retrieved %d slugs in total", len(slugs))
 	return slugs, nil
 }
+
+type recipeForPatchingOrganisers struct {
+	Categories []organiser `json:"recipeCategory"`
+	Tags       []organiser `json:"tags"`
+}
+
+func (m *mealie) setOrganisers(ctx context.Context, recipe recipe) error {
+	log.Printf("updating organisers for %s", recipe.Slug)
+
+	converted := recipeForPatchingOrganisers{
+		Categories: recipe.Categories,
+		Tags:       recipe.Tags,
+	}
+	body, err := json.Marshal(converted)
+	if err != nil {
+		return fmt.Errorf("failed to convert organisers to json: %s", err.Error())
+	}
+
+	req, err := http.NewRequestWithContext(
+		ctx, "PATCH", m.url+"/api/recipes/"+recipe.Slug, bytes.NewReader(body),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to construct request")
+	}
+
+	m.addAuth(req)
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to update organisers")
+	}
+	body, err = io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read response body")
+	}
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("unexpected status code %d: %s", resp.StatusCode, string(body))
+	}
+
+	log.Printf("updated organisers for %s", recipe.Slug)
+	return nil
+}
