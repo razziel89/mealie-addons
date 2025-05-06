@@ -26,22 +26,31 @@ type queryAssignments struct {
 	Assignments []queryAssignment `json:"assignments"`
 }
 
-func updateSlice[T comparable](original []T, add []T, remove []T) []T {
+func updateSlice[T comparable](original []T, add []T, remove []T) ([]T, bool) {
+	wasChanged := false
+
 	asMap := make(map[T]bool, len(original))
 	for _, org := range original {
 		asMap[org] = true
 	}
+
+	length := len(asMap)
 	for _, addThis := range add {
 		asMap[addThis] = true
 	}
+	wasChanged = length != len(asMap)
+
+	length = len(asMap)
 	for _, rmThis := range remove {
 		delete(asMap, rmThis)
 	}
+	wasChanged = wasChanged || length != len(asMap)
+
 	asSlice := make([]T, 0, len(asMap))
 	for key := range asMap {
 		asSlice = append(asSlice, key)
 	}
-	return asSlice
+	return asSlice, wasChanged
 }
 
 func indexedSlice[T comparable](myMap map[string]T, indices []string) []T {
@@ -186,19 +195,22 @@ func launchAssignmentLoop(assignments queryAssignments, mealie mealie) (chan<- b
 								)
 								continue
 							}
-							recipe.Categories = updateSlice(
+							var categoriesChanged, tagsChanged bool
+							recipe.Categories, categoriesChanged = updateSlice(
 								recipe.Categories,
 								indexedSlice(categoriesMap, assignment.Categories.Set),
 								indexedSlice(categoriesMap, assignment.Categories.Unset),
 							)
-							recipe.Tags = updateSlice(
+							recipe.Tags, tagsChanged = updateSlice(
 								recipe.Tags,
 								indexedSlice(tagsMap, assignment.Tags.Set),
 								indexedSlice(tagsMap, assignment.Tags.Unset),
 							)
-							err = mealie.setOrganisers(ctx, recipe)
-							if err != nil {
-								log.Printf("failed to update organisers: %s", err.Error())
+							if categoriesChanged || tagsChanged {
+								err = mealie.setOrganisers(ctx, recipe)
+								if err != nil {
+									log.Printf("failed to update organisers: %s", err.Error())
+								}
 							}
 						}
 					}
