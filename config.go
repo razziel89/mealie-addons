@@ -135,6 +135,14 @@ func initConfig() (cfg config, err error) {
 			)
 			return
 		}
+		if queryAssignments.TimeoutSecs == 0 {
+			err = fmt.Errorf("timeout-secs for query assignment must not be 0")
+			return
+		}
+		if queryAssignments.RepeatSecs == 0 {
+			err = fmt.Errorf("repeat-secs for query assignment must not be 0")
+			return
+		}
 	}
 
 	cfg = config{

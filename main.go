@@ -130,8 +130,17 @@ func main() {
 		}
 	}()
 
+	quitAssignmentLoop, err := launchAssignmentLoop(cfg.queryAssignments, mealie)
+	if err != nil {
+		log.Fatalf("failed to start assignment loop: %s", err.Error())
+	}
+
 	// Actually start the API.
 	startAPIFn()
 	// Block until we are asked to quit.
 	<-quit
+
+	if quitAssignmentLoop != nil {
+		quitAssignmentLoop <- true
+	}
 }

@@ -129,7 +129,9 @@ func (u userResponse) String() string {
 }
 
 type slug struct {
-	Slug string `json:"slug"`
+	Slug       string      `json:"slug"`
+	Categories []*category `json:"recipeCategory"`
+	Tags       []*tag      `json:"tags"`
 }
 
 type (
