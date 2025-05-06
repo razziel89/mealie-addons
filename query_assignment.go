@@ -2,9 +2,8 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
-	"maps"
+	"net/url"
 	"slices"
 	"strings"
 	"time"
@@ -61,83 +60,159 @@ type queryAssignments struct {
 //     ]
 // }
 
+func updateStringSlice(original []string, add []string, remove []string) []string {
+	asMap := make(map[string]bool, len(original))
+	for _, org := range original {
+		asMap[org] = true
+	}
+	for _, addThis := range add {
+		asMap[addThis] = true
+	}
+	for _, rmThis := range remove {
+		delete(asMap, rmThis)
+	}
+	asSlice := make([]string, 0, len(asMap))
+	for key := range asMap {
+		asSlice = append(asSlice, key)
+	}
+	return asSlice
+}
+
 func launchAssignmentLoop(assignments queryAssignments, mealie mealie) (chan<- bool, error) {
 	// Perform sanity checks first.
 	if len(assignments.Assignments) == 0 {
 		return nil, nil
 	}
 
-	back := context.Background()
+	background := context.Background()
 	timeout := time.Duration(assignments.TimeoutSecs) * time.Second
-	_ = time.Duration(assignments.RepeatSecs) * time.Second
-
-	// Handle categories.
-	// First retrieval.
-	ctx, cancel := context.WithTimeout(back, timeout)
-	categoriesRaw, err := mealie.getOrganisers(ctx, "categories")
-	if err != nil {
-		cancel()
-		return nil, fmt.Errorf("failed to retrieve categories: %s", err.Error())
-	}
-	cancel()
-	// Then conversion to a nicer data structure.
-	categories := make(map[string]string, len(categoriesRaw))
-	for _, category := range categoriesRaw {
-		categories[category.Name] = category.ID
-	}
-	// Then logging.
-	keys := slices.Sorted(maps.Keys(categories))
-	log.Printf("known categories: %s", strings.Join(keys, ", "))
-
-	// Handle tags.
-	// First retrieval.
-	ctx, cancel = context.WithTimeout(back, timeout)
-	tagsRaw, err := mealie.getOrganisers(ctx, "tags")
-	if err != nil {
-		cancel()
-		return nil, fmt.Errorf("failed to retrieve tags: %s", err.Error())
-	}
-	cancel()
-	// Then conversion to a nicer data structure.
-	tags := make(map[string]string, len(tagsRaw))
-	for _, tag := range tagsRaw {
-		tags[tag.Name] = tag.ID
-	}
-	// Then logging.
-	keys = slices.Sorted(maps.Keys(categories))
-	log.Printf("known tags: %s", strings.Join(keys, ", "))
-
-	// Check whether all referenced tags and categories are known.
-	for _, assignment := range assignments.Assignments {
-		for _, category := range assignment.Categories.Set {
-			if _, found := categories[category]; !found {
-				return nil, fmt.Errorf("category %s not known", category)
-			}
-		}
-		for _, category := range assignment.Categories.Unset {
-			if _, found := categories[category]; !found {
-				return nil, fmt.Errorf("category %s not known", category)
-			}
-		}
-		for _, tag := range assignment.Tags.Set {
-			if _, found := tags[tag]; !found {
-				return nil, fmt.Errorf("tag %s not known", tag)
-			}
-		}
-		for _, tag := range assignment.Tags.Unset {
-			if _, found := tags[tag]; !found {
-				return nil, fmt.Errorf("tag %s not known", tag)
-			}
-		}
-	}
+	repeatSecs := time.Duration(assignments.RepeatSecs) * time.Second
 
 	quit := make(chan bool)
 
 	go func() {
-		select {
-		case <-quit:
-			return
-		case <-time.After(time.Second * time.Duration(assignments.TimeoutSecs)):
+		for {
+			select {
+			case <-quit:
+				return
+			case <-time.After(repeatSecs):
+				skipAll := false
+
+				// Handle categories. First retrieval.
+				ctx, cancel := context.WithTimeout(background, timeout)
+				categoriesRaw, err := mealie.getOrganisers(ctx, "categories")
+				if err != nil {
+					skipAll = true
+					log.Printf("failed to retrieve categories: %s", err.Error())
+				}
+				cancel()
+				// Then conversion to a nicer data structure.
+				categories := make([]string, 0, len(categoriesRaw))
+				for _, category := range categoriesRaw {
+					categories = append(categories, category.Name)
+				}
+				// Then logging.
+				log.Printf("known categories: %s", strings.Join(categories, ", "))
+
+				// Handle tags. First retrieval.
+				ctx, cancel = context.WithTimeout(background, timeout)
+				tagsRaw, err := mealie.getOrganisers(ctx, "tags")
+				if err != nil {
+					skipAll = true
+					log.Printf("failed to retrieve tags: %s", err.Error())
+				}
+				cancel()
+				// Then conversion to a nicer data structure.
+				tags := make([]string, 0, len(tagsRaw))
+				for _, tag := range tagsRaw {
+					tags = append(tags, tag.Name)
+				}
+				// Then logging.
+				log.Printf("known tags: %s", strings.Join(tags, ", "))
+
+				if !skipAll {
+					// Perform actions for each assignment.
+					for assignmentIdx, assignment := range assignments.Assignments {
+						// Check whether all referenced tags and categories are known.
+						skipThis := false
+						for _, category := range assignment.Categories.Set {
+							if !slices.Contains(categories, category) {
+								log.Printf(
+									"skipping assignment %d, category %s not known",
+									assignmentIdx,
+									category,
+								)
+								skipThis = true
+							}
+						}
+						for _, category := range assignment.Categories.Unset {
+							if !slices.Contains(categories, category) {
+								log.Printf(
+									"skipping assignment %d, category %s not known",
+									assignmentIdx,
+									category,
+								)
+								skipThis = true
+							}
+						}
+						for _, tag := range assignment.Tags.Set {
+							if !slices.Contains(tags, tag) {
+								log.Printf(
+									"skipping assignment %d, tag %s not known",
+									assignmentIdx,
+									tag,
+								)
+								skipThis = true
+							}
+						}
+						for _, tag := range assignment.Tags.Unset {
+							if !slices.Contains(tags, tag) {
+								log.Printf(
+									"skipping assignment %d, tag %s not known",
+									assignmentIdx,
+									tag,
+								)
+								skipThis = true
+							}
+						}
+						if skipThis {
+							continue
+						}
+
+						// Retrieve recipe slugs that match this query.
+						query := url.Values{}
+						for key, value := range assignment.Query {
+							query.Add(key, value)
+						}
+						log.Println("built query string", &query)
+						ctx, cancel = context.WithTimeout(background, timeout)
+						recipeSlugs, err := mealie.getSlugs(ctx, &query)
+						cancel()
+						if err != nil {
+							log.Printf("failed to retrieve recipes: %s", err.Error())
+							continue
+						}
+						log.Printf("%d recipes matched query %d", len(recipeSlugs), assignmentIdx)
+						if len(recipeSlugs) == 0 {
+							continue
+						}
+
+						// Assign everything for each matched recipe.
+						for _, slug := range recipeSlugs {
+							ctx, cancel = context.WithTimeout(background, timeout)
+							_, err := mealie.getRecipe(ctx, slug.Slug)
+							cancel()
+							if err != nil {
+								log.Printf(
+									"skipping recipe %s that failed to yield details: %s",
+									slug, err.Error(),
+								)
+								continue
+							}
+						}
+					}
+				}
+			}
 		}
 	}()
 

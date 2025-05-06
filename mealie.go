@@ -24,19 +24,19 @@ func collapseWhitespace(s string) string {
 
 // We only define those fields that we actually want to use.
 type recipe struct {
-	ID           string         `json:"id"`
-	Slug         string         `json:"slug"`
-	Name         string         `json:"name"`
-	Servings     float32        `json:"recipeServings"`
-	TotalTime    string         `json:"totalTime"`
-	Description  string         `json:"description"`
-	OrgURL       string         `json:"orgURL"`
-	Categories   []*category    `json:"recipeCategory"`
-	Tags         []*tag         `json:"tags"`
-	Instructions []*instruction `json:"recipeInstructions"`
-	Ingredients  []*ingredient  `json:"recipeIngredient"`
-	Comments     []*comment     `json:"comments"`
-	Image        string         `json:"image"`
+	ID           string        `json:"id"`
+	Slug         string        `json:"slug"`
+	Name         string        `json:"name"`
+	Servings     float32       `json:"recipeServings"`
+	TotalTime    string        `json:"totalTime"`
+	Description  string        `json:"description"`
+	OrgURL       string        `json:"orgURL"`
+	Categories   []category    `json:"recipeCategory"`
+	Tags         []tag         `json:"tags"`
+	Instructions []instruction `json:"recipeInstructions"`
+	Ingredients  []ingredient  `json:"recipeIngredient"`
+	Comments     []comment     `json:"comments"`
+	Image        string        `json:"image"`
 }
 
 func (r *recipe) normalise() {
@@ -129,9 +129,7 @@ func (u userResponse) String() string {
 }
 
 type slug struct {
-	Slug       string      `json:"slug"`
-	Categories []*category `json:"recipeCategory"`
-	Tags       []*tag      `json:"tags"`
+	Slug string `json:"slug"`
 }
 
 type (
@@ -148,6 +146,10 @@ type mealie struct {
 
 func (m *mealie) getSlugs(ctx context.Context, query *url.Values) ([]slug, error) {
 	log.Println("getting slugs")
+
+	if query == nil {
+		query = &url.Values{}
+	}
 
 	page := 1
 	lastPage := 10
