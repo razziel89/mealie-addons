@@ -387,3 +387,72 @@ func (m mealie) check() (group string, err error) {
 	log.Println("successful login with user", user)
 	return strings.ToLower(user.Group), nil
 }
+
+type organisersResponse struct {
+	Items []organiser `json:"items"`
+	Pages int         `json:"total_pages"`
+}
+
+type organiser struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+	Slug string `json:"slug"`
+	kind string
+}
+
+func (m *mealie) getOrganisers(ctx context.Context, kind string) ([]organiser, error) {
+	if kind != "categories" && kind != "tags" {
+		return nil, fmt.Errorf("Can only get categories or tags for now but not '%s'.", kind)
+	}
+	log.Printf("getting %s", kind)
+
+	page := 1
+	lastPage := 10
+	var slugs []organiser
+	query := url.Values{}
+
+	for page <= lastPage {
+		query.Set("page", fmt.Sprint(page))
+		query.Set("per_page", "200")
+
+		var slugsResponse organisersResponse
+
+		req, err := http.NewRequestWithContext(ctx, "GET", m.url+"/api/organizers/"+kind, nil)
+		if err != nil {
+			return nil, err
+		}
+		req.URL.RawQuery = query.Encode()
+		log.Println("getting from", m.url+"/api/organizers/"+kind)
+
+		m.addAuth(req)
+
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			return nil, err
+		}
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return nil, err
+		}
+		if resp.StatusCode != http.StatusOK {
+			return nil, fmt.Errorf("unexpected status code %d: %s", resp.StatusCode, string(body))
+		}
+		err = json.Unmarshal(body, &slugsResponse)
+		if err != nil {
+			log.Println("body", string(body))
+			return nil, err
+		}
+		lastPage = slugsResponse.Pages
+		slugs = append(slugs, slugsResponse.Items...)
+		log.Printf("retrieved %d slugs from page %d", len(slugsResponse.Items), page)
+
+		page++
+	}
+
+	for idx := range slugs {
+		slugs[idx].kind = kind
+	}
+
+	log.Printf("retrieved %d slugs in total", len(slugs))
+	return slugs, nil
+}
