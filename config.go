@@ -130,7 +130,7 @@ func initConfig() (cfg config, err error) {
 		parseErr := json.Unmarshal([]byte(queryAssignmentsStr), &queryAssignments)
 		if parseErr != nil {
 			err = fmt.Errorf(
-				"failed to parse MA_NUM_QUERY_ASSIGNMENTS as the expected JSON: %s",
+				"failed to parse MA_QUERY_ASSIGNMENTS as the expected JSON: %s",
 				parseErr.Error(),
 			)
 			return
