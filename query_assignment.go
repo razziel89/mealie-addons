@@ -72,7 +72,7 @@ func launchAssignmentLoop(assignments queryAssignments, mealie mealie) (chan<- b
 	background := context.Background()
 	timeout := time.Duration(assignments.TimeoutSecs) * time.Second
 	repeatTime := time.Duration(assignments.RepeatSecs) * time.Second
-	nextRepeatTime := time.Duration(0)
+	nextWaitTime := time.Duration(0)
 
 	quit := make(chan bool)
 
@@ -81,7 +81,8 @@ func launchAssignmentLoop(assignments queryAssignments, mealie mealie) (chan<- b
 			select {
 			case <-quit:
 				return
-			case <-time.After(nextRepeatTime):
+			case <-time.After(nextWaitTime):
+				startTime := time.Now()
 				skipAll := false
 
 				// Handle categories. First retrieval.
@@ -218,8 +219,9 @@ func launchAssignmentLoop(assignments queryAssignments, mealie mealie) (chan<- b
 						}
 					}
 				}
+				timePassed := time.Since(startTime)
+				nextWaitTime = max(repeatTime-timePassed, 0)
 			}
-			nextRepeatTime = repeatTime
 		}
 	}()
 
