@@ -137,6 +137,15 @@ func main() {
 
 	// Actually start the API.
 	startAPIFn()
+	if err := healthCheck(cfg.selfURL); err != nil {
+		if quitAssignmentLoop != nil {
+			quitAssignmentLoop <- true
+		}
+		if err := serverShutdown(0); err != nil {
+			log.Printf("failed to shut down server: %s", err.Error())
+		}
+		log.Fatalf("health check failed, cannot reach self via MA_SELF_URL: %s", err.Error())
+	}
 	// Block until we are asked to quit.
 	<-quit
 

@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"image"
 	"image/jpeg"
@@ -13,6 +14,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"golang.org/x/image/webp"
 )
 
@@ -20,6 +22,13 @@ const (
 	defaultTimeout    = 2 * time.Second
 	readHeaderTimeout = 5 * time.Second
 )
+
+type healthResponse struct {
+	OK   bool   `json:"ok"`
+	UUID string `json:"uuid"`
+}
+
+var instanceUUID = uuid.New().String()
 
 type responseGenerator interface {
 	commonName() string
@@ -158,6 +167,12 @@ func setUpAPI(
 		}
 	})
 
+	log.Printf("setting up health check endpoint")
+	router.GET("/health", func(c *gin.Context) {
+		status := healthResponse{OK: true, UUID: instanceUUID}
+		c.JSON(http.StatusOK, status)
+	})
+
 	server := &http.Server{
 		Addr:              iface,
 		Handler:           router,
@@ -183,4 +198,58 @@ func setUpAPI(
 	}
 
 	return runFn, shutdownFn
+}
+
+func healthCheck(selfURL string) error {
+	sleeptime := time.Second
+	retries := 30
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Duration(retries)*sleeptime)
+	defer cancel()
+
+	request, err := http.NewRequestWithContext(ctx, "GET", selfURL+"/health", nil)
+	if err != nil {
+		return fmt.Errorf("failed to build health check request: %s", err.Error())
+	}
+
+	success := false
+	retry := 0
+	var response *http.Response
+	for !success {
+		response, err = http.DefaultClient.Do(request)
+		if err == nil {
+			success = true
+		} else if retry >= retries {
+			return fmt.Errorf("failed to execute health check request: %s", err.Error())
+		} else {
+			retry++
+			time.Sleep(sleeptime)
+		}
+	}
+
+	if response.StatusCode != http.StatusOK {
+		return fmt.Errorf("unexpected reply for health check: %d", response.StatusCode)
+	}
+
+	body, err := io.ReadAll(response.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read body for health check: %s", err.Error())
+	}
+
+	var status healthResponse
+	err = json.Unmarshal(body, &status)
+	if err != nil {
+		return fmt.Errorf(
+			"failed to parse body for health check: %s, body: %s",
+			err.Error(), string(body),
+		)
+	}
+
+	if status.UUID == instanceUUID {
+		log.Println("health check successful")
+		return nil
+	}
+	return fmt.Errorf(
+		"instance UUID mismatch in health check, want '%s' but got '%s'",
+		instanceUUID, status.UUID,
+	)
 }
