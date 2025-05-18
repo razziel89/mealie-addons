@@ -10,8 +10,8 @@ import (
 )
 
 type queryAssignmentData struct {
-	Set   []string
-	Unset []string
+	Set   []string `json:"set"`
+	Unset []string `json:"unset"`
 }
 
 type queryAssignment struct {
@@ -71,7 +71,8 @@ func launchAssignmentLoop(assignments queryAssignments, mealie mealie) (chan<- b
 
 	background := context.Background()
 	timeout := time.Duration(assignments.TimeoutSecs) * time.Second
-	repeatSecs := time.Duration(assignments.RepeatSecs) * time.Second
+	repeatTime := time.Duration(assignments.RepeatSecs) * time.Second
+	nextRepeatTime := time.Duration(0)
 
 	quit := make(chan bool)
 
@@ -80,7 +81,7 @@ func launchAssignmentLoop(assignments queryAssignments, mealie mealie) (chan<- b
 			select {
 			case <-quit:
 				return
-			case <-time.After(repeatSecs):
+			case <-time.After(nextRepeatTime):
 				skipAll := false
 
 				// Handle categories. First retrieval.
@@ -218,6 +219,7 @@ func launchAssignmentLoop(assignments queryAssignments, mealie mealie) (chan<- b
 					}
 				}
 			}
+			nextRepeatTime = repeatTime
 		}
 	}()
 
