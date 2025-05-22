@@ -101,7 +101,7 @@ func redirectImgSources(root *html.Node, prefix string, newPrefix string) (*html
 	}
 
 	log.Printf("redirected %d nodes of type %s", numReplaced, element)
-	log.Printf("kept %d nodes of type %s", numReplaced, element)
+	log.Printf("kept %d nodes of type %s", numKept, element)
 
 	return root, nil
 }

@@ -9,6 +9,7 @@ import (
 	"image/jpeg"
 	"io"
 	"log"
+	"mime/multipart"
 	"net/http"
 	"net/url"
 	"strings"
@@ -343,6 +344,125 @@ func (m mealie) getMedia(
 
 	log.Printf("successfully retrieved media: %s", data.mime)
 	return data, nil
+}
+
+// type reuploadImageBody struct {
+//     Image     []byte `json:"image"`
+//     Extension string `json:"extension"`
+// }
+
+func (m mealie) reuploadImage(
+	ctx context.Context,
+	slug string,
+) (bool, error) {
+	recipe, err := m.getRecipe(ctx, slug)
+	if err != nil {
+		return false, err
+	}
+	// if recipe.Image != "" {
+	if recipe.Image == "" {
+		log.Printf("skipping reupload of image for %s", slug)
+		// In this case, the recipe does have an image assigned to it. No reupload is needed, then.
+		return false, nil
+	}
+	log.Printf("attempting reupload of image for %s", slug)
+
+	// Download image first.
+	url := fmt.Sprintf("%s/api/media/recipes/%s/images/original.webp", m.url, recipe.ID)
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	if err != nil {
+		return false, err
+	}
+	req.Header.Set("Accept", "image/*")
+	m.addAuth(req)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return false, err
+	}
+	imageContent, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return false, err
+	}
+	switch resp.StatusCode {
+	case http.StatusOK:
+		// In this case, the recipe has an image assigned even though the "image" property is null.
+		log.Printf("found image for %s", slug)
+	case http.StatusNotFound:
+		// In this case, the recipe really does not have an image assigned to it.
+		log.Printf("there is no image for %s", slug)
+		return false, nil
+	default:
+		return false, fmt.Errorf(
+			"unexpected status code %d: %s", resp.StatusCode, string(imageContent),
+		)
+	}
+	err = resp.Body.Close()
+	if err != nil {
+		return false, err
+	}
+	log.Printf("retrieved image for %s", slug)
+
+	// Upload the image again using multipart/form-data.
+	// reuploadBody := reuploadImageBody{
+	//     Image:     body,
+	//     Extension: "webp",
+	// }
+	// Prepare multipart/form-data input.
+	var uploadBuffer bytes.Buffer
+	multipartWriter := multipart.NewWriter(&uploadBuffer)
+	// Add the image file.
+	imageWriter, err := multipartWriter.CreateFormFile("image", "original.webp")
+	if err != nil {
+		return false, err
+	}
+	_, err = io.Copy(imageWriter, bytes.NewReader(imageContent))
+	if err != nil {
+		return false, err
+	}
+	extensionWriter, err := multipartWriter.CreateFormField("extension")
+	if err != nil {
+		return false, err
+	}
+	_, err = io.Copy(extensionWriter, strings.NewReader("webp"))
+	if err != nil {
+		return false, err
+	}
+	// Close the multipart writer. Otherwise, the sent body would be incomplete.
+	err = multipartWriter.Close()
+	if err != nil {
+		return false, err
+	}
+
+	// encodedBody, err := json.Marshal(&reuploadBody)
+	// if err != nil {
+	//     return false, err
+	// }
+	url = fmt.Sprintf("%s/api/recipes/%s/image", m.url, slug)
+	// req, err = http.NewRequestWithContext(ctx, "PUT", url, bytes.NewReader(encodedBody))
+	req, err = http.NewRequestWithContext(ctx, "PUT", url, &uploadBuffer)
+	if err != nil {
+		return false, err
+	}
+	// The content type header will also contain the multipart boundary.
+	req.Header.Set("Content-Type", multipartWriter.FormDataContentType())
+	// req.Header.Add("Content-Type", "application/json")
+	m.addAuth(req)
+	resp, err = http.DefaultClient.Do(req)
+	if err != nil {
+		return false, err
+	}
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return false, err
+	}
+	if resp.StatusCode != http.StatusOK {
+		return false, fmt.Errorf(
+			"unexpected status code %d: %s", resp.StatusCode, string(body),
+		)
+	}
+	log.Printf("reuploaded image for %s", slug)
+
+	return true, nil
 }
 
 func (m mealie) addAuth(req *http.Request) {

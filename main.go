@@ -130,7 +130,7 @@ func main() {
 		}
 	}()
 
-	quitAssignmentLoop, err := launchAssignmentLoop(cfg.queryAssignments, mealie)
+	quitAssignmentLoop, err := launchAssignmentLoop(cfg.queryAssignments, &mealie)
 	if err != nil {
 		log.Fatalf("failed to start assignment loop: %s", err.Error())
 	}
@@ -145,6 +145,13 @@ func main() {
 			log.Printf("failed to shut down server: %s", err.Error())
 		}
 		log.Fatalf("health check failed, cannot reach self via MA_SELF_URL: %s", err.Error())
+	}
+	// Perform requested fixes.
+	if doFix := cfg.fixes["image-reupload"]; doFix {
+		err := reuploadImages(&mealie)
+		if err != nil {
+			log.Fatalf("failed to run image-reupload fix: %s", err.Error())
+		}
 	}
 	// Block until we are asked to quit.
 	<-quit

@@ -63,7 +63,7 @@ func indexedSlice[T comparable](myMap map[string]T, indices []string) []T {
 	return result
 }
 
-func launchAssignmentLoop(assignments queryAssignments, mealie mealie) (chan<- bool, error) {
+func launchAssignmentLoop(assignments queryAssignments, mealie *mealie) (chan<- bool, error) {
 	// Perform sanity checks first.
 	if len(assignments.Assignments) == 0 {
 		return nil, nil
