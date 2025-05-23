@@ -346,11 +346,6 @@ func (m mealie) getMedia(
 	return data, nil
 }
 
-// type reuploadImageBody struct {
-//     Image     []byte `json:"image"`
-//     Extension string `json:"extension"`
-// }
-
 func (m mealie) reuploadImage(
 	ctx context.Context,
 	slug string,
@@ -359,8 +354,7 @@ func (m mealie) reuploadImage(
 	if err != nil {
 		return false, err
 	}
-	// if recipe.Image != "" {
-	if recipe.Image == "" {
+	if recipe.Image != "" {
 		log.Printf("skipping reupload of image for %s", slug)
 		// In this case, the recipe does have an image assigned to it. No reupload is needed, then.
 		return false, nil
@@ -403,10 +397,6 @@ func (m mealie) reuploadImage(
 	log.Printf("retrieved image for %s", slug)
 
 	// Upload the image again using multipart/form-data.
-	// reuploadBody := reuploadImageBody{
-	//     Image:     body,
-	//     Extension: "webp",
-	// }
 	// Prepare multipart/form-data input.
 	var uploadBuffer bytes.Buffer
 	multipartWriter := multipart.NewWriter(&uploadBuffer)
@@ -433,19 +423,13 @@ func (m mealie) reuploadImage(
 		return false, err
 	}
 
-	// encodedBody, err := json.Marshal(&reuploadBody)
-	// if err != nil {
-	//     return false, err
-	// }
 	url = fmt.Sprintf("%s/api/recipes/%s/image", m.url, slug)
-	// req, err = http.NewRequestWithContext(ctx, "PUT", url, bytes.NewReader(encodedBody))
 	req, err = http.NewRequestWithContext(ctx, "PUT", url, &uploadBuffer)
 	if err != nil {
 		return false, err
 	}
 	// The content type header will also contain the multipart boundary.
 	req.Header.Set("Content-Type", multipartWriter.FormDataContentType())
-	// req.Header.Add("Content-Type", "application/json")
 	m.addAuth(req)
 	resp, err = http.DefaultClient.Do(req)
 	if err != nil {

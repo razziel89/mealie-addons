@@ -11,13 +11,11 @@ import (
 func reuploadImages(mealie *mealie) error {
 	log.Printf("reuploading images")
 
-	// ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
-	// defer cancel()
 	ctx := context.Background()
 	counter := 0
 
 	query := url.Values{}
-	query.Add("queryFilter", "image IS NOT NULL")
+	query.Add("queryFilter", "image IS NULL")
 	slugs, err := mealie.getSlugs(ctx, &query)
 	if err != nil {
 		return fmt.Errorf("failed to retrieve slugs for image-reupload: %s", err.Error())
