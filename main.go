@@ -147,7 +147,7 @@ func main() {
 		log.Fatalf("health check failed, cannot reach self via MA_SELF_URL: %s", err.Error())
 	}
 	// Perform requested fixes.
-	if doFix := cfg.fixes["image-reupload"]; doFix {
+	if cfg.fixes.imageReupload {
 		err := reuploadImages(&mealie)
 		if err != nil {
 			log.Fatalf("failed to run image-reupload fix: %s", err.Error())

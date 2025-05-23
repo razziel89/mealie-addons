@@ -24,7 +24,7 @@ type config struct {
 	htmlAttrsMod       map[string]map[string]string
 	htmlAttrsRm        map[string]map[string]string
 	queryAssignments   queryAssignments
-	fixes              map[string]bool
+	fixes              fixes
 }
 
 func initConfig() (cfg config, err error) {
@@ -146,18 +146,10 @@ func initConfig() (cfg config, err error) {
 		}
 	}
 
-	fixes := map[string]bool{}
-	possibleFixes := []string{"image-reupload"}
-	for _, possibleFix := range possibleFixes {
-		fixes[possibleFix] = false
-	}
-	for _, fix := range strings.Fields(os.Getenv("MA_MEALIE_FIXES")) {
-		if _, found := fixes[fix]; found {
-			fixes[fix] = true
-		} else {
-			err = fmt.Errorf("unknown fix %s, possible are %s", fix, strings.Join(possibleFixes, ", "))
-			return
-		}
+	fixes, fixErr := fixesFromString(os.Getenv("MA_MEALIE_FIXES"))
+	if fixErr != nil {
+		err = fmt.Errorf("failed to parse fixes: %s", fixErr.Error())
+		return
 	}
 
 	cfg = config{

@@ -6,7 +6,25 @@ import (
 	"fmt"
 	"log"
 	"net/url"
+	"strings"
 )
+
+type fixes struct {
+	imageReupload bool
+}
+
+func fixesFromString(s string) (fixes, error) {
+	fixes := fixes{}
+	for _, fix := range strings.Fields(s) {
+		switch fix {
+		case "image-reupload":
+			fixes.imageReupload = true
+		default:
+			return fixes, fmt.Errorf("unknown fix %s", fix)
+		}
+	}
+	return fixes, nil
+}
 
 func reuploadImages(mealie *mealie) error {
 	log.Printf("reuploading images")
