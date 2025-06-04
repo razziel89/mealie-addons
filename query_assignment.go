@@ -123,6 +123,7 @@ func launchAssignmentLoop(assignments queryAssignments, mealie *mealie) (chan<- 
 
 				if !skipAll {
 					// Perform actions for each assignment.
+					numAssignments := len(assignments.Assignments)
 					for assignmentIdx, assignment := range assignments.Assignments {
 						// Check whether all referenced tags and categories are known.
 						skipThis := false
@@ -186,7 +187,12 @@ func launchAssignmentLoop(assignments queryAssignments, mealie *mealie) (chan<- 
 						log.Printf("%d recipes matched query %d", len(recipeSlugs), assignmentIdx)
 
 						// Assign everything for each matched recipe.
-						for _, slug := range recipeSlugs {
+						numSlugs := len(recipeSlugs)
+						for slugIdx, slug := range recipeSlugs {
+							log.Printf(
+								"processing recipe %d/%d for assignment %d/%d",
+								slugIdx+1, numSlugs, assignmentIdx+1, numAssignments,
+							)
 							ctx, cancel = context.WithTimeout(background, timeout)
 							recipe, err := mealie.getRecipe(ctx, slug.Slug)
 							cancel()
