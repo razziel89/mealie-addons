@@ -192,7 +192,7 @@ Total time: %s
 				fmt.Sprintf("[%s](#category-%s)", category.Name, slugify(category.Name)),
 			)
 		}
-		categoriesStr := fmt.Sprintf("- **Catgories**: %s", strings.Join(categories, ", "))
+		categoriesStr := fmt.Sprintf("- **Categories**: %s", strings.Join(categories, ", "))
 		result = append(result, categoriesStr)
 	}
 
