@@ -53,7 +53,7 @@ func (g *markdownGenerator) response(
 	timestamp time.Time,
 ) ([]byte, error) {
 	htmlHook := func(htmlInput *html.Node) (*html.Node, error) {
-		return removeAllHtmlElements(htmlInput, "img")
+		return removeAllHTMLElements(htmlInput, "img")
 	}
 	return g.pandoc.run(
 		ctx,
@@ -188,7 +188,8 @@ Total time: %s
 		result = append(
 			result,
 			fmt.Sprintf(
-				"<img src=\"/api/media/recipes/%s/images/original.webp\" alt=\"%s\" height=\"150\">\n",
+				"<img src=\"/api/media/recipes/%s/images/original.webp\" "+
+					"alt=\"%s\" height=\"150\">\n",
 				recipe.ID,
 				strings.ReplaceAll(recipe.Name, `"`, " "),
 			),

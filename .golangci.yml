@@ -5,8 +5,6 @@ linters:
     - dupl
     - errcheck
     - exhaustive
-    - funlen
-    - goconst
     - goheader
     - gosec
     - govet
@@ -16,16 +14,11 @@ linters:
     - makezero
     - misspell
     - mnd
-    - nestif
     - prealloc
     - revive
     - staticcheck
-    - tagliatelle
     - unused
   settings:
-    funlen:
-      lines: 60
-      statements: 40
     goheader:
       template-path: .goheader.template
     lll:

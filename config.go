@@ -52,35 +52,35 @@ func initConfig() (cfg config, err error) {
 		val := os.Getenv(env)
 		if val == "" {
 			err = fmt.Errorf("environment variable %s not defined or empty", env)
-			return
+			return cfg, err
 		}
 	}
 
 	retrievalLimit, parseErr := strconv.Atoi(os.Getenv("MA_RETRIEVAL_LIMIT"))
 	if parseErr != nil {
 		err = parseErr
-		return
+		return cfg, err
 	}
 	startupGraceSecs, parseErr := strconv.Atoi(os.Getenv("MA_STARTUP_GRACE_SECS"))
 	if parseErr != nil {
 		err = parseErr
-		return
+		return cfg, err
 	}
 	timeoutSecs, parseErr := strconv.Atoi(os.Getenv("MA_TIMEOUT_SECS"))
 	if parseErr != nil {
 		err = parseErr
-		return
+		return cfg, err
 	}
 	interfaceEnv := os.Getenv("MA_LISTEN_INTERFACE")
 	_, portStr, found := strings.Cut(interfaceEnv, ":")
 	if !found {
 		err = fmt.Errorf("cannot find port in interface spec %s", interfaceEnv)
-		return
+		return cfg, err
 	}
 	listenPort, parseErr := strconv.Atoi(portStr)
 	if parseErr != nil {
 		err = parseErr
-		return
+		return cfg, err
 	}
 
 	// Try to interpret the token as pointing to a file that exists. If so, we read the value from
@@ -88,7 +88,7 @@ func initConfig() (cfg config, err error) {
 	// docker-compose secrets.
 	var token string
 	tokenInput := os.Getenv("MEALIE_TOKEN")
-	maybeToken, readErr := os.ReadFile(tokenInput)
+	maybeToken, readErr := os.ReadFile(tokenInput) // #nosec:G304
 	if readErr == nil {
 		// It does point to a file.
 		token = strings.TrimSpace(string(maybeToken))
@@ -109,7 +109,7 @@ func initConfig() (cfg config, err error) {
 		cwd, cwdErr := os.Getwd()
 		if cwdErr != nil {
 			err = fmt.Errorf("failed to get current working directory: %s", cwdErr.Error())
-			return
+			return cfg, err
 		}
 		pandocFontsDir = cwd
 	}
@@ -122,19 +122,19 @@ func initConfig() (cfg config, err error) {
 	case "remove", "ignore", "embed":
 	default:
 		err = fmt.Errorf("unknown image action, must be 'ignore' or 'remove': %s", imageAction)
-		return
+		return cfg, err
 	}
 
-	htmlAttrsMod, parseErr := parseHtmlAttrs(os.Getenv("MA_HTML_ATTRS_MOD"))
+	htmlAttrsMod, parseErr := parseHTMLAttrs(os.Getenv("MA_HTML_ATTRS_MOD"))
 	if parseErr != nil {
 		err = parseErr
-		return
+		return cfg, err
 	}
 
-	htmlAttrsRm, parseErr := parseHtmlAttrs(os.Getenv("MA_HTML_ATTRS_RM"))
+	htmlAttrsRm, parseErr := parseHTMLAttrs(os.Getenv("MA_HTML_ATTRS_RM"))
 	if parseErr != nil {
 		err = parseErr
-		return
+		return cfg, err
 	}
 
 	selfURL := os.Getenv("MA_SELF_URL")
@@ -151,22 +151,22 @@ func initConfig() (cfg config, err error) {
 				"failed to parse MA_QUERY_ASSIGNMENTS as the expected JSON: %s",
 				parseErr.Error(),
 			)
-			return
+			return cfg, err
 		}
 		if queryAssignments.TimeoutSecs == 0 {
 			err = fmt.Errorf("timeout-secs for query assignment must not be 0")
-			return
+			return cfg, err
 		}
 		if queryAssignments.RepeatSecs == 0 {
 			err = fmt.Errorf("repeat-secs for query assignment must not be 0")
-			return
+			return cfg, err
 		}
 	}
 
 	fixes, fixErr := fixesFromString(os.Getenv("MA_MEALIE_FIXES"))
 	if fixErr != nil {
 		err = fmt.Errorf("failed to parse fixes: %s", fixErr.Error())
-		return
+		return cfg, err
 	}
 
 	cfg = config{
@@ -186,5 +186,5 @@ func initConfig() (cfg config, err error) {
 		queryAssignments:   queryAssignments,
 		fixes:              fixes,
 	}
-	return
+	return cfg, err
 }

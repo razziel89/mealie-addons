@@ -48,7 +48,7 @@ func main() {
 		log.Printf("using config: %+v", copyCfg)
 	}
 
-	var limiter chan bool = nil
+	var limiter chan bool
 	if cfg.retrievalLimit > 0 {
 		log.Printf("retrieving at most %d recipes in parallel", cfg.retrievalLimit)
 		limiter = make(chan bool, cfg.retrievalLimit)
@@ -83,7 +83,7 @@ func main() {
 	case "remove":
 		log.Println("image tags will be removed from resulting documents")
 		hook := func(htmlInput *html.Node) (*html.Node, error) {
-			return removeAllHtmlElements(htmlInput, "img")
+			return removeAllHTMLElements(htmlInput, "img")
 		}
 		htmlHooks = append(htmlHooks, hook)
 	case "embed":
@@ -100,7 +100,7 @@ func main() {
 	}
 
 	updateAttrsHook := func(htmlInput *html.Node) (*html.Node, error) {
-		return updateHtmlAttrs(htmlInput, cfg.htmlAttrsMod, cfg.htmlAttrsRm)
+		return updateHTMLAttrs(htmlInput, cfg.htmlAttrsMod, cfg.htmlAttrsRm)
 	}
 	htmlHooks = append(htmlHooks, updateAttrsHook)
 
@@ -130,7 +130,7 @@ func main() {
 	}
 
 	// Allow killing via signals, too. Listen for SIGINT (sent by user) and SIGTERM (sent by OS).
-	signalQuit := make(chan os.Signal, 2) //nolint:gomnd
+	signalQuit := make(chan os.Signal, 2) //nolint:mnd
 	signal.Notify(signalQuit, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		for done := false; !done; {

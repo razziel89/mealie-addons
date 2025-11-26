@@ -132,11 +132,11 @@ func (p *pandoc) loadFonts(dir string) error {
 }
 
 func copyFile(source string, destination string) error {
-	data, err := os.ReadFile(source)
+	data, err := os.ReadFile(source) //#nosec:G304
 	if err != nil {
 		return fmt.Errorf("failed to read source file %s: %s", source, err.Error())
 	}
-	err = os.WriteFile(destination, data, 0644)
+	err = os.WriteFile(destination, data, 0o600) //nolint:mnd
 	if err != nil {
 		return fmt.Errorf("failed to write destination file %s: %s", destination, err.Error())
 	}
@@ -148,7 +148,7 @@ func checkForPandoc() error {
 	if err != nil {
 		return fmt.Errorf("failed to find pandoc in path: %s", err.Error())
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second) //nolint:mnd
 	defer cancel()
 	output, _, err := runExe(
 		ctx,
@@ -186,8 +186,8 @@ func (p *pandoc) run(
 	// Convert to HTML first. Somehow, internal links are broken without doing so.
 	firstArgs := append([]string{}, alwaysUserArgs...)
 	for _, arg := range p.options {
-		if strings.HasPrefix(arg, "@first:") {
-			firstArgs = append(firstArgs, strings.TrimPrefix(arg, "@first:"))
+		if rest, found := strings.CutPrefix(arg, "@first:"); found {
+			firstArgs = append(firstArgs, rest)
 		}
 	}
 	firstArgs = append(firstArgs, alwaysArgs...)
@@ -228,8 +228,8 @@ func (p *pandoc) run(
 	// Convert again, but to the desired format.
 	lastArgs := append([]string{}, alwaysUserArgs...)
 	for _, arg := range p.options {
-		if strings.HasPrefix(arg, "@last:") {
-			lastArgs = append(lastArgs, strings.TrimPrefix(arg, "@last:"))
+		if rest, found := strings.CutPrefix(arg, "@last:"); found {
+			lastArgs = append(lastArgs, rest)
 		}
 	}
 	if p.mainFont != "" {

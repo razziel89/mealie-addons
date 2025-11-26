@@ -53,7 +53,7 @@ func (g *htmlGenerator) response(
 	return g.pandoc.run(ctx, buildMarkdown(recipes, g.url), "html", buildTitle(timestamp), nil)
 }
 
-func removeAllHtmlElements(root *html.Node, element string) (*html.Node, error) {
+func removeAllHTMLElements(root *html.Node, element string) (*html.Node, error) {
 	nodesAtCurrentLevel := []*html.Node{root}
 	nodesAtNextLevel := []*html.Node{}
 	numRemoved := 0
@@ -64,7 +64,7 @@ func removeAllHtmlElements(root *html.Node, element string) (*html.Node, error) 
 			for child != nil {
 				next := child.NextSibling
 				if child.Type == html.ElementNode && child.Data == element {
-					numRemoved += 1
+					numRemoved++
 					current.RemoveChild(child)
 				} else {
 					nodesAtNextLevel = append(nodesAtNextLevel, child)
@@ -105,9 +105,9 @@ func redirectImgSources(root *html.Node, prefix string, newPrefix string) (*html
 						}
 					}
 					if replaced {
-						numReplaced += 1
+						numReplaced++
 					} else {
-						numKept += 1
+						numKept++
 					}
 				}
 				child = next
@@ -147,7 +147,7 @@ func ensureWebpImagesCanBeReplaced(root *html.Node) (*html.Node, error) {
 						}
 					}
 					if replaced {
-						numReplaced += 1
+						numReplaced++
 					}
 				}
 				child = next
@@ -161,7 +161,7 @@ func ensureWebpImagesCanBeReplaced(root *html.Node) (*html.Node, error) {
 	return root, nil
 }
 
-func updateHtmlAttrs(
+func updateHTMLAttrs(
 	root *html.Node,
 	mapMod map[string]map[string]string,
 	mapRm map[string]map[string]string,
@@ -233,7 +233,7 @@ func updateHtmlAttrs(
 	return root, nil
 }
 
-func parseHtmlAttrs(htmlInput string) (map[string]map[string]string, error) {
+func parseHTMLAttrs(htmlInput string) (map[string]map[string]string, error) {
 	result := map[string]map[string]string{}
 	if htmlInput == "" {
 		return result, nil

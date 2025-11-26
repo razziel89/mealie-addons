@@ -266,7 +266,7 @@ func (m mealie) getRecipes(ctx context.Context, queryParams map[string][]string)
 
 	for idx, slug := range slugs {
 		// Avoid loop pointer weirdness.
-		idx := idx
+		id := idx
 		slug := slug
 		// Retrieve all recipes in parallel. Let'ssee if this works.
 		go func() {
@@ -276,9 +276,9 @@ func (m mealie) getRecipes(ctx context.Context, queryParams map[string][]string)
 			recipe, err := m.getRecipe(ctx, slug.Slug)
 			if err == nil {
 				recipe.normalise()
-				recipes[idx] = recipe
+				recipes[id] = recipe
 			} else {
-				errs[idx] = err
+				errs[id] = err
 			}
 			wg.Done()
 			if m.limiter != nil {
@@ -471,7 +471,7 @@ func (m mealie) addAuth(req *http.Request) {
 }
 
 func (m mealie) check() (group string, err error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second) //nolint:mnd
 	defer cancel()
 
 	// Augment error no matter which one we get.
@@ -514,7 +514,7 @@ type organisersResponse struct {
 
 func (m *mealie) getOrganisers(ctx context.Context, kind string) ([]organiser, error) {
 	if kind != "categories" && kind != "tags" {
-		return nil, fmt.Errorf("Can only get categories or tags for now but not '%s'.", kind)
+		return nil, fmt.Errorf("can only get categories or tags for now but not '%s'", kind)
 	}
 	log.Printf("getting %s", kind)
 

@@ -77,9 +77,9 @@ func setUpAPI(
 	router := gin.Default()
 
 	for _, generator := range generators {
-		generator := generator
-		log.Println("setting up endpoint for", generator.commonName())
-		router.GET("/book/"+generator.commonName(), func(c *gin.Context) {
+		gen := generator
+		log.Println("setting up endpoint for", gen.commonName())
+		router.GET("/book/"+gen.commonName(), func(c *gin.Context) {
 			ctx, cancel := context.WithTimeout(c.Request.Context(), timeout)
 			defer cancel()
 
@@ -88,11 +88,11 @@ func setUpAPI(
 			filename := fmt.Sprintf(
 				"recipes-%s.%s",
 				now.Format(time.RFC3339),
-				generator.extension(),
+				gen.extension(),
 			)
 			c.Writer.Header().
 				Set("Content-Disposition", "attachment; filename="+filename)
-			c.Writer.Header().Set("Content-Type", generator.mimeType())
+			c.Writer.Header().Set("Content-Type", gen.mimeType())
 
 			if timedOut(ctx, c, "before getting recipes") {
 				return
@@ -106,13 +106,13 @@ func setUpAPI(
 			}
 
 			if err == nil {
-				log.Printf("retrieved %d recipes for %s", len(recipes), generator.mimeType())
+				log.Printf("retrieved %d recipes for %s", len(recipes), gen.mimeType())
 			}
 
 			// Generate the file that shall be downloaded.
 			var response []byte
 			if err == nil {
-				response, err = generator.response(ctx, recipes, now)
+				response, err = gen.response(ctx, recipes, now)
 			}
 
 			if timedOut(ctx, c, "while generating the file") {
@@ -132,7 +132,7 @@ func setUpAPI(
 			}
 
 			if err == nil {
-				msg := fmt.Sprintf("%s endpoint accessed successfully", generator.mimeType())
+				msg := fmt.Sprintf("%s endpoint accessed successfully", gen.mimeType())
 				log.Println(msg)
 				c.Status(http.StatusOK)
 			} else {

@@ -32,7 +32,7 @@ type fixes struct {
 
 func fixesFromString(s string) (fixes, error) {
 	fixes := fixes{}
-	for _, fix := range strings.Fields(s) {
+	for fix := range strings.FieldsSeq(s) {
 		switch fix {
 		case "image-reupload":
 			fixes.imageReupload = true
