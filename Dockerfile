@@ -1,4 +1,4 @@
-FROM golang:1.23-bookworm AS builder
+FROM golang:1.24-bookworm AS builder
 RUN \
   apt-get update && \
   DEBIAN_FRONTEND=noninteractive apt-get install -y make
