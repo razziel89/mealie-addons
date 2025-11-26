@@ -1,0 +1,45 @@
+version: "2"
+linters:
+  default: none
+  enable:
+    - dupl
+    - errcheck
+    - exhaustive
+    - funlen
+    - goconst
+    - goheader
+    - gosec
+    - govet
+    - importas
+    - ineffassign
+    - lll
+    - makezero
+    - misspell
+    - mnd
+    - nestif
+    - prealloc
+    - revive
+    - staticcheck
+    - tagliatelle
+    - unused
+  settings:
+    funlen:
+      lines: 60
+      statements: 40
+    goheader:
+      template-path: .goheader.template
+    lll:
+      line-length: 100
+      tab-width: 4
+  exclusions:
+    generated: strict
+    rules:
+      - path: _test\.go
+        linters:
+          - dupl
+          - gosec
+formatters:
+  enable:
+    - goimports
+  exclusions:
+    generated: strict
