@@ -1,4 +1,4 @@
-FROM golang:1.24-bookworm AS builder
+FROM golang:1.26-bookworm AS builder
 RUN \
   apt-get update && \
   DEBIAN_FRONTEND=noninteractive apt-get install -y make
@@ -14,7 +14,7 @@ RUN \
   DEBIAN_FRONTEND=noninteractive apt-get install -y wget curl
 
 FROM downloader_base AS downloader_pandoc
-RUN wget -O /pandoc.deb https://github.com/jgm/pandoc/releases/download/3.6.3/pandoc-3.6.3-1-amd64.deb
+RUN wget -O /pandoc.deb https://github.com/jgm/pandoc/releases/download/3.9/pandoc-3.9-1-amd64.deb
 
 FROM downloader_base AS downloader_fonts
 RUN \

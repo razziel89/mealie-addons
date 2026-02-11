@@ -117,7 +117,7 @@ func buildMarkdown(recipes []recipe, url string) string {
 		categoriesPerRecipe[recipe.ID] = categories
 	}
 
-	result := []string{}
+	result := make([]string, 0, 2*(len(recipes)+1)) //nolint:mnd
 
 	// Recipes.
 	result = append(result, "# Recipes")
@@ -130,7 +130,8 @@ func buildMarkdown(recipes []recipe, url string) string {
 	}
 
 	// Tags index.
-	tagsIndex := []string{`# Tags`}
+	tagsIndex := make([]string, 0, len(recipes))
+	tagsIndex = append(tagsIndex, `# Tags`)
 	for _, tag := range sortedTags {
 		tagsIndex = append(
 			tagsIndex,
@@ -147,7 +148,8 @@ func buildMarkdown(recipes []recipe, url string) string {
 	result = append(result, tagsIndex...)
 
 	// Categories index.
-	categoriesIndex := []string{`# Categories`}
+	categoriesIndex := make([]string, 0, len(recipes))
+	categoriesIndex = append(categoriesIndex, `# Categories`)
 	for _, category := range sortedCategories {
 		categoriesIndex = append(
 			categoriesIndex,

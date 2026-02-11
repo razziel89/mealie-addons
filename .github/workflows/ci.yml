@@ -25,16 +25,16 @@ jobs:
           fetch-depth: 0
 
       - name: Install Golang
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v6
         with:
-          go-version: "1.24"
+          go-version: "1.26"
 
       - name: Install dependencies
         run: |
           # System.
           sudo apt-get install make curl wget
           # Go.
-          curl -sSfL "${RAW_URL}/${LINT}" | sudo sh -s -- -b "${TARGET}" v1.64.7
+          curl -sSfL "${RAW_URL}/${LINT}" | sudo sh -s -- -b "${TARGET}" v2.9.0
           # Custom.
           sudo wget -O "${TARGET}/mdslw" "${MDSLW_URL}/${MDSLW_BIN}"
           sudo chmod +x "${TARGET}/mdslw"
@@ -80,6 +80,7 @@ jobs:
   docker-ci:
     needs: [ci]
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     permissions:
       contents: read
       packages: write
