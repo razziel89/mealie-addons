@@ -31,10 +31,15 @@ type queryAssignmentData struct {
 	Unset []string `json:"unset"`
 }
 
+type queryAssignmentQuery struct {
+	Params map[string]string `json:"params"`
+	Mode   string            `json:"mode"`
+}
+
 type queryAssignment struct {
-	Query      map[string]string   `json:"query"`
-	Categories queryAssignmentData `json:"categories"`
-	Tags       queryAssignmentData `json:"tags"`
+	Queries    []queryAssignmentQuery `json:"queries"`
+	Categories queryAssignmentData    `json:"categories"`
+	Tags       queryAssignmentData    `json:"tags"`
 }
 
 type queryAssignments struct {
@@ -142,13 +147,13 @@ func launchAssignmentLoop(assignments queryAssignments, mealie *mealie) (chan<- 
 					// Perform actions for each assignment.
 					numAssignments := len(assignments.Assignments)
 					for assignmentIdx, assignment := range assignments.Assignments {
-						// Check whether all referenced tags and categories are known.
 						skipThis := false
+						// Check whether all referenced tags and categories are known.
 						for _, category := range assignment.Categories.Set {
 							if !slices.Contains(categories, category) {
 								log.Printf(
 									"skipping assignment %d, category %s not known",
-									assignmentIdx,
+									assignmentIdx+1,
 									category,
 								)
 								skipThis = true
@@ -158,7 +163,7 @@ func launchAssignmentLoop(assignments queryAssignments, mealie *mealie) (chan<- 
 							if !slices.Contains(categories, category) {
 								log.Printf(
 									"skipping assignment %d, category %s not known",
-									assignmentIdx,
+									assignmentIdx+1,
 									category,
 								)
 								skipThis = true
@@ -168,7 +173,7 @@ func launchAssignmentLoop(assignments queryAssignments, mealie *mealie) (chan<- 
 							if !slices.Contains(tags, tag) {
 								log.Printf(
 									"skipping assignment %d, tag %s not known",
-									assignmentIdx,
+									assignmentIdx+1,
 									tag,
 								)
 								skipThis = true
@@ -178,7 +183,7 @@ func launchAssignmentLoop(assignments queryAssignments, mealie *mealie) (chan<- 
 							if !slices.Contains(tags, tag) {
 								log.Printf(
 									"skipping assignment %d, tag %s not known",
-									assignmentIdx,
+									assignmentIdx+1,
 									tag,
 								)
 								skipThis = true
@@ -188,23 +193,79 @@ func launchAssignmentLoop(assignments queryAssignments, mealie *mealie) (chan<- 
 							continue
 						}
 
-						// Retrieve recipe slugs that match this query.
-						query := url.Values{}
-						for key, value := range assignment.Query {
-							query.Add(key, value)
-						}
-						log.Println("built query string", &query)
+						recipeSlugsRetention := map[slug]bool{}
 						ctx, cancel = context.WithTimeout(background, timeout)
-						recipeSlugs, err := mealie.getSlugs(ctx, &query)
-						cancel()
-						if err != nil {
-							log.Printf("failed to retrieve recipes: %s", err.Error())
-							continue
+						for queryIdx, query := range assignment.Queries {
+							// Check whether this query's mode is known.
+							switch query.Mode {
+							case "add", "remove":
+								// Retrieve recipe slugs that match this query.
+								queryVals := url.Values{}
+								for key, value := range query.Params {
+									queryVals.Add(key, value)
+								}
+								log.Printf(
+									"built string for query %d of assignment %d: %v",
+									queryIdx+1,
+									assignmentIdx+1,
+									&queryVals,
+								)
+								querySlugs, err := mealie.getSlugs(ctx, &queryVals)
+								if err != nil {
+									log.Printf("failed to retrieve recipes: %s", err.Error())
+									continue
+								}
+								log.Printf(
+									"%d recipes matched query %d of assignment %d in mode %s",
+									len(querySlugs),
+									queryIdx+1,
+									assignmentIdx+1,
+									query.Mode,
+								)
+								if query.Mode == "add" {
+									for _, slug := range querySlugs {
+										recipeSlugsRetention[slug] = true
+									}
+								} else {
+									for _, slug := range querySlugs {
+										recipeSlugsRetention[slug] = false
+									}
+								}
+							case "skip":
+								log.Printf(
+									"skipping query %d of assignment %d due to mode setting",
+									queryIdx+1,
+									assignmentIdx+1,
+								)
+								continue
+							default:
+								log.Printf(
+									"skipping query %d of assignment %d, unknown mode %s",
+									queryIdx+1,
+									assignmentIdx+1,
+									query.Mode,
+								)
+								continue
+							}
 						}
-						log.Printf("%d recipes matched query %d", len(recipeSlugs), assignmentIdx)
+						cancel()
+
+						recipeSlugs := make([]slug, 0, len(recipeSlugsRetention))
+						for slug, keep := range recipeSlugsRetention {
+							if keep {
+								recipeSlugs = append(recipeSlugs, slug)
+							}
+						}
 
 						// Assign everything for each matched recipe.
 						numSlugs := len(recipeSlugs)
+						if numSlugs == 0 {
+							log.Printf(
+								"No recipes to process for assignment %d/%d",
+								assignmentIdx+1,
+								numAssignments,
+							)
+						}
 						for slugIdx, slug := range recipeSlugs {
 							log.Printf(
 								"processing recipe %d/%d for assignment %d/%d",
