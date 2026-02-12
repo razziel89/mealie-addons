@@ -567,6 +567,112 @@ The following explains all [environment variables] understood by
     - a virtual private network, or
     - special routing tables.
 
+- `MA_QUERY_ASSIGNMENTS`:
+  This optional environment variable defaults to the empty string.
+  If not empty, it has to contain a JSON string that describes tag and category
+  assignments that `mealie-addons` shall perform on a regular basis.
+
+  The below example configuration will cause `mealie-addons` to assign the
+  category named `made` and the tag named `cooked` to all recipes that have
+  already been cooked once, i.e., whose `lastMade` property is not `null`.
+  Detailed explanations of the individual parts follow below the example.
+
+  ```json
+  {
+    "repeat-secs": 3600,
+    "timeout-secs": 600,
+    "assignments": [
+      {
+        "queries": [
+          {
+            "mode": "add",
+            "params": {
+              "queryFilter": "lastMade IS NOT NULL"
+            }
+          },
+          {
+            "mode": "remove",
+            "params": {
+              "queryFilter": "recipeCategory.name CONTAINS ALL [\"made\"]"
+            }
+          }
+        ],
+        "categories": {
+          "set": ["made"],
+          "unset": ["notmade"]
+        },
+        "tags": {
+          "set": ["cooked"],
+          "unset": []
+        }
+      }
+    ]
+  }
+  ```
+
+  - `assignments`:
+    A list of assignment entities.
+    An assignment consists of a set of queries and category and tag settings.
+    Assignments will be performed in the given order.
+    When performing an assignment, `mealie-addons` will first determine all
+    recipes that match the associated queries.
+    Then, it will perform the specified assignments for the matched recipes.
+  - `repeat-secs`:
+    An integer value in seconds.
+    This is the minimum time that has to pass since the last round of
+    assignments has begun before a new round can start.
+    If a set of assignments takes longer than this time, the next round of
+    assignments is started immediately after the last.
+  - `timeout-secs`:
+    An integer value in seconds.
+    This is the maximum time that each retrieval operation may take.
+  - `queries`:
+    A list of query entities.
+    A query consists of a mode and a set of parameters.
+  - `params`:
+    A string-to-string map of search properties and values.
+    For example, when you would like `mealie-addons` to send the query
+    `orderBy=name&orderDirection=asc` to `mealie`'s REST API, you should specify
+    the following `params` instead:
+    ```json
+    {
+      "params": {
+        "orderBy": "name",
+        "orderDirection": "asc"
+      }
+    }
+    ```
+    The given values are automatically URL-encoded before being sent to
+    `mealie`'s REST API.
+  - `mode`:
+    How recipes that match the associated query parameters shall be handled.
+    If the value is `add`, then the matched recipes are added to the set of
+    recipes that will undergo the specified category and tag assignments.
+    If the value is `remove`, then the matched recipes are removed from that
+    set.
+    If the value is `skip`, then the matched recipes will be ignored.
+    By following a query with `"mode": "add"` by one with `"mode": "remove"`, it
+    is possible to construct recipe sets that would not be possible to construct
+    using `mealie`'s recipe matching logic alone, as in the example above.
+    Performing assignments takes much more time than searching `mealie` for
+    recipes that match a query.
+    Thus, by removing all recipes that already have the relevant category from
+    the set of matched recipes, the assignment can be made much more efficient.
+  - `categories`:
+    A set of category names to assign and remove from all matched recipes.
+    If not all referenced categories are known to `mealie`, the assignment will
+    be skipped.
+  - `set`:
+    A list of category (or tag) names (not UUIDs) that shall be added to all
+    matched recipes.
+  - `unset`:
+    A list of category (or tag) names (not UUIDs) that shall be removed from all
+    matched recipes.
+  - `tags`:
+    Identical to `categories` but for `tags` instead.
+    If not all referenced tags are known to `mealie`, the assignment will be
+    skipped.
+
 # How To Contribute
 
 If you have found a bug and want to fix it, please simply go ahead and fork the
