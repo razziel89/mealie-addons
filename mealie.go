@@ -169,7 +169,7 @@ func (m *mealie) getSlugs(ctx context.Context, query *url.Values) ([]slug, error
 
 	for page <= lastPage {
 		query.Set("page", fmt.Sprint(page))
-		query.Set("per_page", "200")
+		query.Set("perPage", "200")
 
 		var slugsResponse slugsResponse
 
@@ -525,7 +525,7 @@ func (m *mealie) getOrganisers(ctx context.Context, kind string) ([]organiser, e
 
 	for page <= lastPage {
 		query.Set("page", fmt.Sprint(page))
-		query.Set("per_page", "200")
+		query.Set("perPage", "200")
 
 		var slugsResponse organisersResponse
 
