@@ -62,7 +62,7 @@ func runExe(
 	ctx context.Context, exe string, args []string, env []string, stdin []byte,
 ) ([]byte, string, error) {
 	log.Println("running", exe, "with args:", strings.Join(args, " "))
-	cmd := exec.CommandContext(ctx, exe, args...)
+	cmd := exec.CommandContext(ctx, exe, args...) // #nosec:G204
 	cmd.Env = env
 
 	cmd.Stdin = bytes.NewReader(stdin)
@@ -136,7 +136,8 @@ func copyFile(source string, destination string) error {
 	if err != nil {
 		return fmt.Errorf("failed to read source file %s: %s", source, err.Error())
 	}
-	err = os.WriteFile(destination, data, 0o600) //nolint:mnd
+	const fileMode = 0o600
+	err = os.WriteFile(destination, data, os.FileMode(fileMode)) //#nosec:G703
 	if err != nil {
 		return fmt.Errorf("failed to write destination file %s: %s", destination, err.Error())
 	}

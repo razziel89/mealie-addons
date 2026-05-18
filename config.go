@@ -88,7 +88,7 @@ func initConfig() (cfg config, err error) {
 	// docker-compose secrets.
 	var token string
 	tokenInput := os.Getenv("MEALIE_TOKEN")
-	maybeToken, readErr := os.ReadFile(tokenInput) // #nosec:G304
+	maybeToken, readErr := os.ReadFile(tokenInput) // #nosec:G304,G703
 	if readErr == nil {
 		// It does point to a file.
 		token = strings.TrimSpace(string(maybeToken))
