@@ -8,7 +8,7 @@ RUN go mod download
 COPY *.go Makefile ./
 RUN make build
 
-FROM ubuntu:24.04 AS downloader_base
+FROM ubuntu:26.04 AS downloader_base
 RUN \
   apt-get update && \
   DEBIAN_FRONTEND=noninteractive apt-get install -y wget curl
@@ -45,7 +45,7 @@ RUN find \
   -iname "*.ttf" | xargs cp -t /fonts
 RUN cp /fonts-main/ofl/notoserif/NotoSerifwdthwght.ttf /fonts/main.ttf
 
-FROM ubuntu:24.04
+FROM ubuntu:26.04
 LABEL org.opencontainers.image.source=https://github.com/razziel89/mealie-addons
 LABEL org.opencontainers.image.description="Export recipes from mealie to various formats and more."
 LABEL org.opencontainers.image.licenses=GPLv3,OFL,others
