@@ -32,15 +32,16 @@ jobs:
       - name: Install dependencies
         run: |
           # System.
-          sudo apt-get install make curl wget
+          sudo apt-get update
+          sudo apt-get install -y make curl wget
           # Go.
-          curl -sSfL "${RAW_URL}/${LINT}" | sudo sh -s -- -b "${TARGET}" v2.14.0
+          go install "${LINT_PKG}"
           # Custom.
           sudo wget -O "${TARGET}/mdslw" "${MDSLW_URL}/${MDSLW_BIN}"
           sudo chmod +x "${TARGET}/mdslw"
         env:
-          RAW_URL: https://raw.githubusercontent.com
-          LINT: golangci/golangci-lint/master/install.sh
+          DEBIAN_FRONTEND: noninteractive
+          LINT_PKG: github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest
           MDSLW_URL: https://github.com/razziel89/mdslw/releases/latest/download/
           MDSLW_BIN: mdslw_x86_64-unknown-linux-musl
           TARGET: /usr/local/bin
